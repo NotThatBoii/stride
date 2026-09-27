@@ -75,7 +75,11 @@ export default function Heatmap({
   return (
     <section
       className="heatmap-panel"
-      style={{ "--heat-accent": color ?? "var(--accent)" } as CSSProperties}
+      style={
+        {
+          "--heat-accent": color ?? "var(--heat-primary, var(--accent))",
+        } as CSSProperties
+      }
     >
       <div className="section-heading">
         <div>

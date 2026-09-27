@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Stride",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "identifier": "com.philippaglinawan.stride",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -10,7 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [{"label":"main","title":"Stride","width":1366,"height":900,"minWidth":760,"minHeight":600,"backgroundColor":"#18191c"}],
+    "windows": [{"label":"main","title":"Stride","width":1366,"height":900,"minWidth":760,"minHeight":600,"backgroundColor":"#0f1219"}],
     "security": {"csp":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src ipc: http://ipc.localhost"}
   },
   "bundle": {

@@ -6,7 +6,9 @@ Stride is a local-first study tracker for Windows and the web, built around subj
 
 ## Windows app — no server required
 
-Download the **Stride-Windows-x64** artifact from the latest successful [Windows build](https://github.com/NotThatBoii/stride/actions/workflows/windows.yml). Sign in to GitHub, extract the ZIP, and run `Stride_0.3.0_x64-setup.exe` in `target/release/bundle/nsis`. The installer adds Stride to Start. You can also run the included `target/release/stride.exe` directly. Windows 10/11 x64 and WebView2 are required; the installer downloads WebView2 if missing. Builds are currently unsigned.
+**[Download Stride for Windows](https://github.com/NotThatBoii/stride/releases/latest)** � choose `Stride_0.4.0_x64-setup.exe` under Assets, run it, and open Stride from Start. Share that release link with friends; no GitHub account is needed to download from this public repository.
+
+Windows 10/11 x64 only. The installer downloads WebView2 if missing (internet required for that initial download). A portable ZIP and SHA-256 checksums are available on the same release. Portable means no installation; study data still lives in your Windows user profile. Builds are currently unsigned.
 
 Once installed, open **Stride** from Start. Normal use needs no terminal, Node.js, local server, or internet connection. The application files are embedded in the executable.
 
@@ -21,11 +23,11 @@ npm.cmd ci --legacy-peer-deps
 npm.cmd run desktop:build
 ```
 
-The installer is written to `src-tauri/target/release/bundle/nsis/`; the standalone executable is `src-tauri/target/release/stride.exe`. `npm.cmd run desktop:dev` starts the development server automatically. Only development needs a server. GitHub Actions builds an installer for source changes on `main` and retains artifacts for 30 days.
+The installer is written to `src-tauri/target/release/bundle/nsis/`; the standalone executable is `src-tauri/target/release/stride.exe`. `npm.cmd run desktop:dev` starts the development server automatically. Only development needs a server. GitHub Actions builds an installer for source changes on `main` and retains development artifacts for 30 days. Pushing a version tag such as `v0.4.0` also publishes a permanent GitHub Release with the Windows installer, portable ZIP, and checksums. Update the package, Tauri, Cargo, and display versions together before tagging.
 
 ## Screenshots
 
-![Stride overview](docs/screenshots/home.png)
+![Stride overview](docs/screenshots/home-reference.png)
 
 [Subjects](docs/screenshots/subjects.png) · [Subject activity](docs/screenshots/subject.png) · [Focus](docs/screenshots/focus-active.png) · [History](docs/screenshots/history.png) · [Insights](docs/screenshots/insights.png) · [Settings](docs/screenshots/settings.png) · [Light theme](docs/screenshots/narrow-light.png)
 

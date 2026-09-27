@@ -2,10 +2,11 @@ name: Build Windows app
 on:
   push:
     branches: [main]
+    tags: ['v*']
     paths: ['src/**', 'src-tauri/**', 'package*.json', 'index.html', 'vite.config.ts', 'tsconfig.json', '.github/workflows/windows.yml']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   windows:
     runs-on: windows-latest
@@ -21,6 +22,12 @@ jobs:
           workspaces: src-tauri -> target
       - run: npm ci --legacy-peer-deps
       - run: npm test
+      - name: Check release version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          if ($env:GITHUB_REF_NAME -ne "v$version") { throw 'Release tag must match package version' }
       - run: npm run desktop:build
       - name: Save Windows installer and standalone executable
         uses: actions/upload-artifact@v4
@@ -32,3 +39,23 @@ jobs:
             src-tauri/Cargo.lock
           if-no-files-found: error
           retention-days: 30
+      - name: Publish Windows downloads
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          New-Item -ItemType Directory -Path release-files, portable | Out-Null
+          Copy-Item "src-tauri/target/release/bundle/nsis/*-setup.exe" release-files/
+          Copy-Item src-tauri/target/release/stride.exe, LICENSE portable/
+          Copy-Item docs/PORTABLE.txt portable/README.txt
+          Compress-Archive -Path portable/* -DestinationPath "release-files/Stride_${version}_Windows-x64-portable.zip"
+          Get-ChildItem release-files -File | ForEach-Object {
+            $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)"
+          } | Set-Content release-files/SHA256SUMS.txt
+          $assets = (Get-ChildItem release-files -File).FullName
+          gh release create $env:GITHUB_REF_NAME @assets --verify-tag --title "Stride $version for Windows" --notes-file docs/RELEASE-NOTES.md --latest
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release publication failed' }

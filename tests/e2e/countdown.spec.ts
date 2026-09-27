@@ -48,9 +48,7 @@ test("countdown completes once and time edits recalculate streaks", async ({
   await expect(
     page.getByText("✓ Minimum Day complete", { exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".sidebar-progress small")).toHaveText(
-    "1 day streak",
-  );
+  await expect(page.locator(".streak-summary strong")).toHaveText("1 day");
   await page.locator("button.cell.today").focus();
   await page.keyboard.press("ArrowUp");
   await expect(page.locator("#heatmap-2026-09-20")).toBeFocused();
@@ -73,9 +71,7 @@ test("countdown completes once and time edits recalculate streaks", async ({
   await expect(
     page.getByRole("button", { name: "Add your first subject", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".sidebar-progress small")).toHaveText(
-    "0 day streak",
-  );
+  await expect(page.locator(".streak-summary strong")).toHaveText("0 days");
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Keep your stride." }),

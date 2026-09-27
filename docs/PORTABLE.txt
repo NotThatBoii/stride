@@ -1,0 +1,13 @@
+Stride for Windows x64
+
+Extract this ZIP and open stride.exe. No Node.js, terminal, or local server is needed.
+Windows 10/11 x64 and Microsoft Edge WebView2 Runtime are required. Use the setup.exe installer from the same GitHub Release if WebView2 is missing.
+
+This is a portable executable, not a portable data profile: study data stays in your Windows user profile, and is shared with the installed version of Stride.
+
+To transfer history from the web version or another PC: Settings > Export JSON, then Settings > Import JSON on the destination. Import replaces the destination workspace after confirmation. Export a backup before upgrading or restoring.
+
+The application is unsigned. No account is required. Notifications require Stride to remain open.
+
+Updates and installer: https://github.com/NotThatBoii/stride/releases/latest
+Source and MIT license: https://github.com/NotThatBoii/stride

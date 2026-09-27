@@ -15,16 +15,11 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { useStride } from "./state";
-import {
-  aggregate,
-  dayKey,
-  formatTime,
-  parseDay,
-  streaks,
-} from "./lib/analytics";
+import { dayKey, formatTime, parseDay } from "./lib/analytics";
 import { elapsed, activeSegments } from "./lib/timer";
 import { saveRunning } from "./lib/storage";
 import { notifySessionComplete } from "./lib/platform";
+import { Mountains } from "./components/Artwork";
 import Dashboard from "./pages/Dashboard";
 import { Subjects, SubjectDetail } from "./pages/Subjects";
 import Focus from "./pages/Focus";
@@ -52,14 +47,13 @@ export default function App() {
   const [add, setAdd] = useState(false);
   const [day, setDay] = useState<string>();
   const [quick, setQuick] = useState(false);
+  const [quickQuery, setQuickQuery] = useState("");
+  useEffect(() => {
+    if (!quick) setQuickQuery("");
+  }, [quick]);
   const [collapsed, setCollapsed] = useState(false);
   const [notificationError, setNotificationError] = useState("");
   const today = dayKey(new Date(now));
-  const sessions = data.sessions.filter((s) =>
-    data.subjects.some((x) => x.id === s.subject_id && !x.archived),
-  );
-  const days = aggregate(sessions, data.slices);
-  const streak = streaks(days, data.settings.minimum, today);
   const timer = data.running;
   const notificationAttempt = useRef<string | null>(null);
   useEffect(() => {
@@ -132,17 +126,30 @@ export default function App() {
         >
           <aside className="sidebar">
             <div className="brand">
-              <span className="brand-mark">s</span>
-              <strong>
-                stride<span>.</span>
-              </strong>
+              <span className="brand-mark">S</span>
+              <strong>Stride</strong>
+              <button
+                className="icon-button sidebar-toggle"
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                onClick={() => setCollapsed(!collapsed)}
+              >
+                {collapsed ? (
+                  <PanelLeftOpen size={17} />
+                ) : (
+                  <PanelLeftClose size={17} />
+                )}
+              </button>
             </div>
-            <button className="search-button" onClick={() => setQuick(true)}>
+            <button
+              className="search-button"
+              aria-label="Quick actions"
+              onClick={() => setQuick(true)}
+            >
               <Search size={16} />
-              <span>Quick actions</span>
+              <span>Search or command...</span>
               <kbd>Ctrl K</kbd>
             </button>
-            <span className="nav-caption">WORKSPACE</span>
+
             <nav>
               {links.map(({ name, icon: Icon }) => (
                 <button
@@ -158,68 +165,27 @@ export default function App() {
                 </button>
               ))}
             </nav>
-            <div className="sidebar-subjects">
-              <div className="row">
-                <span className="nav-caption">YOUR SUBJECTS</span>
-                <button
-                  aria-label="Add subject"
-                  className="icon-button"
-                  onClick={() => setAdd(true)}
-                >
-                  <Plus size={15} />
-                </button>
-              </div>
-              {data.subjects
-                .filter((s) => !s.archived)
-                .map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => openSubject(s.id)}
-                    className={subject === s.id ? "selected" : ""}
-                  >
-                    <i
-                      className="subject-dot"
-                      style={{ background: s.color }}
-                    />
-                    <span>{s.name}</span>
-                  </button>
-                ))}
-            </div>
             <div className="sidebar-bottom">
-              <div className="sidebar-progress">
-                <div className="row">
-                  <span>Today</span>
-                  <strong>
-                    {Math.floor((days.get(today) ?? 0) / 60)} /{" "}
-                    {data.settings.goal} min
-                  </strong>
-                </div>
-                <div className="progress-track">
-                  <i
-                    style={{
-                      width: `${Math.min(100, ((days.get(today) ?? 0) / (data.settings.goal * 60)) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <small>{streak.current} day streak</small>
+              <div className="sidebar-inspiration">
+                <Mountains />
+                <blockquote>
+                  “Small steps
+                  <br />
+                  compound into
+                  <br />
+                  extraordinary results.”
+                </blockquote>
               </div>
-              <div className="row">
-                <span className="local-label">
-                  <i className="status-dot" />
-                  Stored on this device
+              <button
+                className="workspace-profile"
+                onClick={() => navigate("Settings")}
+                aria-label="Personal workspace settings"
+              >
+                <span className="profile-avatar">S</span>
+                <span>
+                  Personal Workspace<small>Local · Free forever</small>
                 </span>
-                <button
-                  className="icon-button"
-                  aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                  onClick={() => setCollapsed(!collapsed)}
-                >
-                  {collapsed ? (
-                    <PanelLeftOpen size={17} />
-                  ) : (
-                    <PanelLeftClose size={17} />
-                  )}
-                </button>
-              </div>
+              </button>
             </div>
           </aside>
           <main>
@@ -233,11 +199,10 @@ export default function App() {
                 </button>
               )}
               <span>
-                Stride <span className="muted">/</span>{" "}
                 {subject
                   ? data.subjects.find((s) => s.id === subject)?.name
                   : page === "Home"
-                    ? "Overview"
+                    ? "Home"
                     : page}
               </span>
               <span className="topbar-note">
@@ -251,6 +216,7 @@ export default function App() {
                   onSubject={openSubject}
                   onFocus={focus}
                   onDay={setDay}
+                  onHistory={() => navigate("History")}
                 />
               )}{" "}
               {page === "Subjects" &&
@@ -341,34 +307,76 @@ export default function App() {
       )}
       {quick && (
         <Modal title="Where to next?" onClose={() => setQuick(false)}>
+          <input
+            autoFocus
+            aria-label="Search commands and subjects"
+            placeholder="Search commands or subjects..."
+            value={quickQuery}
+            onChange={(e) => setQuickQuery(e.target.value)}
+          />
           <div className="quick-actions">
-            <button onClick={() => focus()}>
-              <Play size={18} />{" "}
-              {timer ? "Return to focus session" : "Start study session"}
-            </button>
-            <button
-              onClick={() => {
-                setQuick(false);
-                setAdd(true);
-              }}
-            >
-              <Plus size={18} /> Add subject
-            </button>
-            <button
-              onClick={() => {
-                setQuick(false);
-                setSubject(undefined);
-                setDay(today);
-              }}
-            >
-              <HistoryIcon size={18} /> View today’s activity
-            </button>
-            {links.map(({ name, icon: Icon }) => (
-              <button key={name} onClick={() => navigate(name)}>
-                <Icon size={18} />
-                {name}
-              </button>
-            ))}
+            {!quickQuery && (
+              <>
+                <button onClick={() => focus()}>
+                  <Play size={18} />{" "}
+                  {timer ? "Return to focus session" : "Start study session"}
+                </button>
+                <button
+                  onClick={() => {
+                    setQuick(false);
+                    setAdd(true);
+                  }}
+                >
+                  <Plus size={18} /> Add subject
+                </button>
+                <button
+                  onClick={() => {
+                    setQuick(false);
+                    setSubject(undefined);
+                    setDay(today);
+                  }}
+                >
+                  <HistoryIcon size={18} /> View today’s activity
+                </button>
+              </>
+            )}
+            {links
+              .filter(({ name }) =>
+                name.toLowerCase().includes(quickQuery.toLowerCase()),
+              )
+              .map(({ name, icon: Icon }) => (
+                <button key={name} onClick={() => navigate(name)}>
+                  <Icon size={18} />
+                  {name}
+                </button>
+              ))}
+            {data.subjects
+              .filter(
+                (s) =>
+                  !s.archived &&
+                  s.name.toLowerCase().includes(quickQuery.toLowerCase()),
+              )
+              .map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    openSubject(s.id);
+                    setQuick(false);
+                  }}
+                >
+                  <BookOpen size={18} />
+                  {s.name}
+                </button>
+              ))}
+            {quickQuery &&
+              !links.some(({ name }) =>
+                name.toLowerCase().includes(quickQuery.toLowerCase()),
+              ) &&
+              !data.subjects.some(
+                (s) =>
+                  !s.archived &&
+                  s.name.toLowerCase().includes(quickQuery.toLowerCase()),
+              ) && <p className="hint">No matching commands or subjects.</p>}
           </div>
         </Modal>
       )}

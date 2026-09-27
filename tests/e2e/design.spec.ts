@@ -11,10 +11,11 @@ test("major screens fit desktop and narrow viewports without console errors", as
   }, fixture());
   await page.goto("/");
   await expect(page.locator(".subject-card")).toHaveCount(4);
-  for (const width of [1366, 1440, 1920, 800]) {
+  for (const width of [1366, 1440, 1672, 1920, 800]) {
     await page.setViewportSize({
       width,
-      height: width === 1366 || width === 800 ? 768 : 900,
+      height:
+        width === 1672 ? 940 : width === 1366 || width === 800 ? 768 : 900,
     });
     for (const screen of [
       "Home",
@@ -31,6 +32,14 @@ test("major screens fit desktop and narrow viewports without console errors", as
           () => document.documentElement.scrollWidth <= window.innerWidth,
         ),
       ).toBeTruthy();
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+      if (width === 1672 && screen === "Home")
+        await page.screenshot({ path: "docs/screenshots/home-reference.png" });
       if (width === 1440)
         await page.screenshot({
           path: `docs/screenshots/${screen.toLowerCase()}.png`,

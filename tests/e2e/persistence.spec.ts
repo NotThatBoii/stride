@@ -35,7 +35,7 @@ test("records survive a real browser restart and JSON backup round-trip", async 
   page = await context.newPage();
   await page.goto("http://127.0.0.1:1420");
   await expect(page.locator(".subject-card")).toHaveCount(4);
-  await expect(page.locator(".session-row")).toHaveCount(4);
+  await expect(page.locator(".recent-session")).toHaveCount(4);
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByLabel("Import backup file").setInputFiles({
     name: "bad.json",
@@ -50,6 +50,6 @@ test("records survive a real browser restart and JSON backup round-trip", async 
   await page.getByRole("button", { name: "Replace and restore" }).click();
   await page.getByRole("button", { name: "Home", exact: true }).click();
   await expect(page.locator(".subject-card")).toHaveCount(4);
-  await expect(page.locator(".session-row")).toHaveCount(4);
+  await expect(page.locator(".recent-session")).toHaveCount(4);
   await context.close();
 });

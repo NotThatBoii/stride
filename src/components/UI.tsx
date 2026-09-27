@@ -1,13 +1,11 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
-import { X, ArrowUpRight, BookOpen } from "lucide-react";
+import { X, ChevronRight, BookOpen, Flame, Clock3 } from "lucide-react";
 import type { Subject } from "../models";
 import {
   aggregate,
   dayKey,
   formatTime,
   streaks,
-  sumDays,
-  weekStart,
   shiftDay,
 } from "../lib/analytics";
 import { useStride } from "../state";
@@ -92,7 +90,12 @@ export function SubjectCard({
   );
   const streak = streaks(days, data.settings.minimum, today);
   return (
-    <button className="subject-card" onClick={onClick}>
+    <button
+      className="subject-card"
+      onClick={onClick}
+      aria-label={subject.name}
+    >
+      <i className="subject-dot" style={{ background: subject.color }} />
       <span className="subject-icon" style={{ color: subject.color }}>
         {subject.icon === "book" ? <BookOpen size={17} /> : subject.icon}
       </span>
@@ -102,14 +105,16 @@ export function SubjectCard({
       </span>
       <span className="subject-week">
         <strong>
+          <Clock3 size={16} />
           {formatTime(
-            sumDays(days, weekStart(today, data.settings.weekStart), today),
+            [...days.values()].reduce((total, seconds) => total + seconds, 0),
           )}
         </strong>
-        <small>this week</small>
+        <small>total study</small>
       </span>
       <span className="subject-streak">
         <strong>
+          <Flame size={15} className="flame-icon" />
           {streak.current} {streak.current === 1 ? "day" : "days"}
         </strong>
         <small>current streak</small>
@@ -128,7 +133,7 @@ export function SubjectCard({
           />
         ))}
       </span>
-      <ArrowUpRight size={14} className="muted" />
+      <ChevronRight size={14} className="muted" />
     </button>
   );
 }
