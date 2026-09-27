@@ -6,7 +6,7 @@ Stride is a local-first study tracker for Windows and the web, built around subj
 
 ## Windows app — no server required
 
-Download the **Stride-Windows-x64** artifact from the latest successful [Windows build](https://github.com/NotThatBoii/stride/actions/workflows/windows.yml). Sign in to GitHub, extract the ZIP, and run `Stride_0.3.0_x64-setup.exe` in `bundle/nsis`. The installer adds Stride to Start. You can also run the included `stride.exe` directly. Windows 10/11 x64 and WebView2 are required; the installer downloads WebView2 if missing. Builds are currently unsigned.
+Download the **Stride-Windows-x64** artifact from the latest successful [Windows build](https://github.com/NotThatBoii/stride/actions/workflows/windows.yml). Sign in to GitHub, extract the ZIP, and run `Stride_0.3.0_x64-setup.exe` in `target/release/bundle/nsis`. The installer adds Stride to Start. You can also run the included `target/release/stride.exe` directly. Windows 10/11 x64 and WebView2 are required; the installer downloads WebView2 if missing. Builds are currently unsigned.
 
 Once installed, open **Stride** from Start. Normal use needs no terminal, Node.js, local server, or internet connection. The application files are embedded in the executable.
 
@@ -42,7 +42,7 @@ Populated screenshots use an isolated test fixture. Stride never adds sample stu
 - Neutral dark/light themes, compact subject rows, and a distraction-reduced active timer.
 - Three-step onboarding, quick actions (`Ctrl/Cmd + K`), and recent-subject selection.
 - IndexedDB persistence, automatic migration from the earlier browser storage, JSON export, and validated JSON restore.
-- Optional browser notifications when a countdown ends while Stride is open.
+- Optional Windows or browser notifications when a countdown ends while Stride is open.
 
 ## Tech stack
 
@@ -66,7 +66,7 @@ Open **http://127.0.0.1:1420**. Keep using the same browser and address: browser
 ## Development
 
 ```sh
-npm test          # Analytics, calendar accounting, timers, storage, validation
+npm test          # Analytics, timers, storage, validation, native file/notification handling
 npm run test:e2e  # Browser workflows, restart persistence, and screen checks
 npm run build     # Strict TypeScript + production build
 npm run preview   # Serve dist locally
@@ -92,7 +92,7 @@ IndexedDB survives refreshes, browser restarts, and reopening the same origin. C
 - Default Minimum Day: 20 minutes. Overall streaks combine **active** subjects; each subject requires the minimum within that subject.
 - An incomplete today keeps yesterday's streak alive until midnight. A missed day restarts the current streak without removing past activity.
 - Study intervals split at local calendar midnight and exclude pauses. Recorded day keys remain stable if you travel between timezones.
-- An unpaused stopwatch counts elapsed wall time while the app is closed. Countdown recovery caps time at the target. Closed browsers do not send scheduled notifications.
+- An unpaused stopwatch counts elapsed wall time while the app is closed. Countdown recovery caps time at the target. Notifications require Stride to remain open.
 - Text-only session edits preserve daily allocations. Time edits redistribute that session continuously from the selected start.
 - Archiving excludes the subject from overall totals, but preserves its history and dedicated detail page. Restoring includes it again.
 
