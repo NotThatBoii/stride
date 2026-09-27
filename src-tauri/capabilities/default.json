@@ -1,0 +1,6 @@
+{
+  "identifier": "main",
+  "description": "Local application window. File access is restricted to paths selected through native dialogs.",
+  "windows": ["main"],
+  "permissions": ["core:default", "dialog:allow-save", "dialog:allow-open", "fs:allow-write-text-file", "fs:allow-read-text-file", "fs:allow-stat", "notification:default"]
+}

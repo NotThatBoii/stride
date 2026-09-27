@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Stride",
+  "version": "0.3.0",
+  "identifier": "com.philippaglinawan.stride",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{"label":"main","title":"Stride","width":1366,"height":900,"minWidth":760,"minHeight":600,"backgroundColor":"#18191c"}],
+    "security": {"csp":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src ipc: http://ipc.localhost"}
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Philip Paglinawan",
+    "shortDescription": "Build consistency, one session at a time.",
+    "icon": ["icons/icon.png", "icons/icon.ico"],
+    "windows": {
+      "webviewInstallMode": {"type":"downloadBootstrapper"},
+      "nsis": {"installMode":"currentUser","displayLanguageSelector":false}
+    }
+  }
+}

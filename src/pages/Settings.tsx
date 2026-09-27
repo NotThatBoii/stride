@@ -5,6 +5,13 @@ import { restoreData, saveSettings } from "../lib/storage";
 import { parseBackup } from "../lib/validation";
 import type { Data } from "../models";
 import { Modal } from "../components/UI";
+import {
+  appVersion,
+  isDesktop,
+  requestNotifications,
+  exportBackup,
+  openDesktopBackup,
+} from "../lib/platform";
 export default function Settings() {
   const { data, act, busy } = useStride();
   const [form, setForm] = useState(data.settings);
@@ -26,9 +33,7 @@ export default function Settings() {
     }
     if (form.notifications) {
       try {
-        const allowed =
-          "Notification" in window &&
-          (await Notification.requestPermission()) === "granted";
+        const allowed = await requestNotifications();
         if (!allowed) {
           setError(
             "Notifications were not allowed. Enable permission or turn this preference off.",
@@ -43,29 +48,37 @@ export default function Settings() {
     if (await act(() => saveSettings({ ...form, presets: presets.join(",") })))
       setSaved(true);
   }
-  function exportData() {
-    const url = URL.createObjectURL(
-      new Blob(
-        [
-          JSON.stringify(
-            {
-              format: "stride",
-              version: 1,
-              exportedAt: new Date().toISOString(),
-              ...data,
-            },
-            null,
-            2,
-          ),
-        ],
-        { type: "application/json" },
-      ),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `stride-export-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  async function exportData() {
+    try {
+      await exportBackup(
+        JSON.stringify(
+          {
+            format: "stride",
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            ...data,
+          },
+          null,
+          2,
+        ),
+      );
+      setError("");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error));
+    }
+  }
+  async function importData() {
+    if (!isDesktop) {
+      fileInput.current?.click();
+      return;
+    }
+    try {
+      const text = await openDesktopBackup();
+      if (text !== null) setPending(parseBackup(text));
+      setError("");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error));
+    }
   }
   return (
     <>
@@ -190,12 +203,16 @@ export default function Settings() {
         <div>
           <h2>Local data</h2>
           <p>
-            Subjects, sessions, and settings are stored in this browser using
-            IndexedDB.
+            {isDesktop
+              ? "Your study data is saved in Stride’s local Windows app profile. The app works without a server or internet connection."
+              : "Subjects, sessions, and settings are stored in this browser using IndexedDB."}
           </p>
           <p className="hint">
             Export includes subjects, sessions, daily allocations, preferences,
-            and active timer state. Keep an export before clearing browser data.
+            and active timer state.{" "}
+            {isDesktop
+              ? "To move your browser history here, export it from the web version and import that JSON file. Web and desktop have separate workspaces."
+              : "Use Export JSON to move your history into the Windows app. Keep a backup before clearing browser data."}
           </p>
         </div>
         <input
@@ -221,11 +238,11 @@ export default function Settings() {
         <button
           className="secondary"
           disabled={!!data.running}
-          onClick={() => fileInput.current?.click()}
+          onClick={() => void importData()}
         >
           Import JSON
         </button>
-        <button className="secondary" onClick={exportData}>
+        <button className="secondary" onClick={() => void exportData()}>
           <Download size={16} /> Export JSON
         </button>
       </section>
@@ -235,7 +252,7 @@ export default function Settings() {
           onClose={() => setPending(undefined)}
         >
           <p>
-            This replaces this browser’s data with {pending.subjects.length}{" "}
+            This replaces this workspace’s data with {pending.subjects.length}{" "}
             subjects and {pending.sessions.length} sessions. Export your current
             data first if you want to keep it. Any restored timer will be
             paused.
@@ -259,7 +276,10 @@ export default function Settings() {
           </div>
         </Modal>
       )}
-      <p className="hint">Stride 0.2.0 · Open source · MIT licensed</p>
+      <p className="hint">
+        Stride {appVersion} · {isDesktop ? "Windows desktop" : "Web"} · MIT
+        licensed
+      </p>
     </>
   );
 }

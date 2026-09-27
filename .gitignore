@@ -5,6 +5,11 @@ test-results/
 playwright-report/
 *.local
 *.tsbuildinfo
+src-tauri/gen/
+src-tauri/icons/*
+!src-tauri/icons/icon.png
+!src-tauri/icons/icon.ico
+!src-tauri/icons/stride.svg
 
 .env
 .env.*

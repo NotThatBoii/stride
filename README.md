@@ -2,7 +2,26 @@
 
 **Build consistency, one session at a time.**
 
-Stride is a local-first study tracking web application built around subjects, real study sessions, streaks, and GitHub-style contribution heatmaps. Track individual subjects or see your overall activity, then review the patterns in your study history. No account is required.
+Stride is a local-first study tracker for Windows and the web, built around subjects, real study sessions, streaks, and GitHub-style contribution heatmaps. No account is required.
+
+## Windows app — no server required
+
+Download the **Stride-Windows-x64** artifact from the latest successful [Windows build](https://github.com/NotThatBoii/stride/actions/workflows/windows.yml). Sign in to GitHub, extract the ZIP, and run `Stride_0.3.0_x64-setup.exe` in `bundle/nsis`. The installer adds Stride to Start. You can also run the included `stride.exe` directly. Windows 10/11 x64 and WebView2 are required; the installer downloads WebView2 if missing. Builds are currently unsigned.
+
+Once installed, open **Stride** from Start. Normal use needs no terminal, Node.js, local server, or internet connection. The application files are embedded in the executable.
+
+To move existing history: open the web version once, choose **Settings → Export JSON**, then **Settings → Import JSON** in the Windows app. Web and desktop have separate workspaces. Imports validate the file and ask before replacing data. Keep the export as a backup.
+
+### Build the Windows app
+
+Install the [Tauri Windows prerequisites](https://v2.tauri.app/start/prerequisites/): stable Rust, Visual Studio C++ Build Tools, a Windows SDK, and WebView2.
+
+```powershell
+npm.cmd ci --legacy-peer-deps
+npm.cmd run desktop:build
+```
+
+The installer is written to `src-tauri/target/release/bundle/nsis/`; the standalone executable is `src-tauri/target/release/stride.exe`. `npm.cmd run desktop:dev` starts the development server automatically. Only development needs a server. GitHub Actions builds an installer for source changes on `main` and retains artifacts for 30 days.
 
 ## Screenshots
 
@@ -27,9 +46,9 @@ Populated screenshots use an isolated test fixture. Stride never adds sample stu
 
 ## Tech stack
 
-React 19 · TypeScript (strict) · Vite · Dexie / IndexedDB · Zod · Lucide · CSS.
+React 19 · TypeScript (strict) · Vite · Tauri 2 / Rust · Dexie / IndexedDB · Zod · Lucide · CSS.
 
-Stride runs in the browser. No Tauri, Electron, native toolchain, account service, remote font, or analytics service is needed.
+The Windows app uses the system WebView2 runtime in a native Tauri window; the web version runs in ordinary browsers. Both share the study logic and interface. Native file dialogs and Windows notifications are enabled in the desktop app.
 
 ## Getting started
 
@@ -56,11 +75,11 @@ npm run format    # Format source, tests, and configuration
 
 Playwright tests use installed Microsoft Edge and fresh browser contexts. The restart test uses a temporary profile under ignored `test-results/`. Tests do not modify your actual browser workspace. Windows GitHub Actions run the same checks.
 
-Production output is generated in `dist/` and can be served by a static web host. This repository does not configure hosting or a service worker; opening/reloading the app still requires its files to be reachable. Once loaded, all study operations run locally without a backend.
+Web production output is generated in `dist/` and can be served by a static web host. The web version has no service worker, so opening/reloading it requires its files to be reachable. The desktop build embeds those files and opens offline.
 
 ## Data storage and safety
 
-The browser's IndexedDB database `stride` contains versioned tables for subjects, sessions, daily allocations, settings, timer recovery, and migration metadata. Transactions keep session records and daily totals consistent. Streaks and insights are calculated from the records rather than stored as competing totals. Changes are observed across tabs.
+The IndexedDB database `stride` contains versioned tables for subjects, sessions, daily allocations, settings, timer recovery, and migration metadata. Windows stores it in Stride's persistent WebView2 profile under the user's local app data, normally `%LOCALAPPDATA%\com.philippaglinawan.stride`. Browser data belongs to the site's origin. Transactions keep session records and daily totals consistent. Streaks and insights are calculated from records. The desktop app uses single-instance handling to avoid competing windows.
 
 The previous `stride-browser-preview-v1` localStorage dataset is validated and migrated once, transactionally. The original copy remains untouched as a migration backup; it is no longer updated. Invalid old data produces an error rather than silently resetting the workspace.
 

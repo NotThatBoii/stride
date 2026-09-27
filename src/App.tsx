@@ -24,6 +24,7 @@ import {
 } from "./lib/analytics";
 import { elapsed, activeSegments } from "./lib/timer";
 import { saveRunning } from "./lib/storage";
+import { notifySessionComplete } from "./lib/platform";
 import Dashboard from "./pages/Dashboard";
 import { Subjects, SubjectDetail } from "./pages/Subjects";
 import Focus from "./pages/Focus";
@@ -94,10 +95,7 @@ export default function App() {
       });
       if (data.settings.notifications) {
         try {
-          if ("Notification" in window && Notification.permission === "granted")
-            new Notification("A step forward.", {
-              body: "Your focus session is complete. Save your progress in Stride.",
-            });
+          await notifySessionComplete();
         } catch (e) {
           setNotificationError(String(e));
         }

@@ -4,7 +4,7 @@
 
 The original local implementation used React 19, strict TypeScript, Vite, CSS, Lucide icons, React context, and local view-state navigation. Subjects, session forms, timer recovery, local-midnight accounting, streak calculations, heatmaps, settings, and onboarding already worked. This pass retains that product logic and component structure.
 
-The previous browser persistence stored a serialized dataset in localStorage. A native scaffold also existed locally but had never been built. The application now ships as a browser-only project; native packages and configuration are not part of its runtime or build.
+The previous browser persistence stored a serialized dataset in localStorage. Version 0.3 adds a Tauri Windows shell around the same frontend and IndexedDB persistence. Production assets are embedded, with no HTTP server. The desktop WebView2 profile is separate from browser data; validated JSON export/import transfers records. Platform helpers provide native save/open dialogs and notifications while preserving browser behavior. The Windows CI workflow compiles and uploads an NSIS installer and standalone executable.
 
 ## Persistence
 
