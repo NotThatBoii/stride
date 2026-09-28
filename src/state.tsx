@@ -4,10 +4,17 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import type { Data } from "./models";
-import { initialize, readData } from "./lib/storage";
+import {
+  getActiveDatabase,
+  getActiveWorkspace,
+  initialize,
+  readData,
+  subscribeWorkspace,
+} from "./lib/storage";
 import { liveQuery } from "dexie";
 interface State {
   data: Data;
@@ -19,45 +26,83 @@ interface State {
 }
 const Context = createContext<State | null>(null);
 export function Provider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<Data>();
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const writing = useRef(false);
+  const workspace = useSyncExternalStore(
+    subscribeWorkspace,
+    getActiveWorkspace,
+  );
+  const [snapshot, setSnapshot] = useState<{
+    generation: number;
+    data: Data;
+  }>();
+  const [failure, setFailure] = useState<{
+    generation: number;
+    message: string;
+  }>();
+  const [busyGeneration, setBusyGeneration] = useState<number | null>(null);
+  const writing = useRef<number | null>(null);
   const [now, setNow] = useState(Date.now());
+  const data =
+    snapshot?.generation === workspace.generation ? snapshot.data : undefined;
+  const error =
+    failure?.generation === workspace.generation ? failure.message : "";
+  const busy = busyGeneration === workspace.generation;
   useEffect(() => {
     let cancelled = false;
     let subscription: { unsubscribe: () => void } | undefined;
-    initialize()
+    const db = getActiveDatabase();
+    const generation = workspace.generation;
+    const current = () =>
+      !cancelled && getActiveWorkspace().generation === generation;
+    initialize(db)
       .then(() => {
-        if (!cancelled)
-          subscription = liveQuery(() => readData()).subscribe({
-            next: setData,
-            error: (e) => setError(String(e)),
+        if (current())
+          subscription = liveQuery(() => readData(db)).subscribe({
+            next: (next) => {
+              if (current()) setSnapshot({ generation, data: next });
+            },
+            error: (e) => {
+              if (current()) setFailure({ generation, message: String(e) });
+            },
           });
       })
-      .catch((e) => setError(String(e)));
+      .catch((e) => {
+        if (current()) setFailure({ generation, message: String(e) });
+      });
     const tick = setInterval(() => setNow(Date.now()), 1000);
     return () => {
       cancelled = true;
       subscription?.unsubscribe();
       clearInterval(tick);
     };
-  }, []);
+  }, [workspace.generation]);
   async function act(work: () => Promise<void>) {
-    if (writing.current) return false;
-    writing.current = true;
-    setBusy(true);
+    const generation = workspace.generation;
+    if (
+      getActiveWorkspace().generation !== generation ||
+      writing.current === generation
+    )
+      return false;
+    writing.current = generation;
+    setBusyGeneration(generation);
     try {
       await work();
-      setData(await readData());
-      setError("");
+      if (getActiveWorkspace().generation !== generation) return false;
+      const next = await readData(getActiveDatabase());
+      if (getActiveWorkspace().generation !== generation) return false;
+      setSnapshot({ generation, data: next });
+      setFailure(undefined);
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (getActiveWorkspace().generation === generation)
+        setFailure({
+          generation,
+          message: e instanceof Error ? e.message : String(e),
+        });
       return false;
     } finally {
-      writing.current = false;
-      setBusy(false);
+      if (writing.current === generation) writing.current = null;
+      if (getActiveWorkspace().generation === generation)
+        setBusyGeneration(null);
     }
   }
   if (!data)
@@ -71,7 +116,15 @@ export function Provider({ children }: { children: ReactNode }) {
     );
   return (
     <Context.Provider
-      value={{ data, now, busy, error, clearError: () => setError(""), act }}
+      key={workspace.generation}
+      value={{
+        data,
+        now,
+        busy,
+        error,
+        clearError: () => setFailure(undefined),
+        act,
+      }}
     >
       {children}
     </Context.Provider>
