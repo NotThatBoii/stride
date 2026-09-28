@@ -12,6 +12,8 @@ The previous browser persistence stored a serialized dataset in localStorage. Ve
 
 On first initialization the old localStorage record is validated and copied atomically with an initialization marker. Its source is preserved. A failed migration cannot commit a partial database, and a completed migration never replays the obsolete backup. `liveQuery` keeps open views up to date, including changes from other tabs.
 
+The [Phase 2 local sync foundation](PHASE_2_SYNC_FOUNDATION.md) documents the additive Dexie V2 schema, account workspace boundary, and deferred cloud protocol.
+
 All analytics derive from saved sessions and daily allocations. Recovery state remains transient until the user saves a session. Completed active timer intervals exclude pauses; unpaused wall time is recovered when reopened. Countdowns cap at their target.
 
 ## Backup validation
@@ -32,4 +34,4 @@ The UI uses neutral graphite and charcoal surfaces, a limited indigo accent, 5px
 
 ## Limits
 
-No cloud sync, account, service worker, or scheduled notification after browser closure is implemented. Browser storage is scoped to the origin and can be removed through site-data clearing or eviction. Export is the backup mechanism. Navigation uses local view state, not URL routing.
+No cloud sync, authentication, service worker, or scheduled notification after browser closure is implemented. Browser storage is scoped to the origin and can be removed through site-data clearing or eviction. Export is the backup mechanism. Navigation uses local view state, not URL routing.
