@@ -3,6 +3,8 @@ dist/
 src-tauri/target/
 test-results/
 playwright-report/
+supabase/.temp/
+supabase/.branches/
 *.local
 *.tsbuildinfo
 src-tauri/gen/
