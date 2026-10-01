@@ -1,0 +1,844 @@
+// Run explicitly with Node against a disposable local Supabase stack only.
+// Set STRIDE_LOCAL_SUPABASE_URL, STRIDE_LOCAL_SUPABASE_PUBLIC_KEY, and
+// STRIDE_LOCAL_SUPABASE_ADMIN_KEY in the process environment. Never use hosted keys.
+import assert from "node:assert/strict";
+import { randomBytes, randomUUID } from "node:crypto";
+import { test } from "node:test";
+
+const baseUrl = new URL(
+  process.env.STRIDE_LOCAL_SUPABASE_URL ?? "http://127.0.0.1:54321",
+);
+if (
+  baseUrl.protocol !== "http:" ||
+  !["127.0.0.1", "localhost"].includes(baseUrl.hostname) ||
+  !baseUrl.port ||
+  baseUrl.pathname !== "/" ||
+  baseUrl.username ||
+  baseUrl.password ||
+  baseUrl.search ||
+  baseUrl.hash
+) {
+  throw new Error(
+    "Integration tests require a plain HTTP loopback Supabase URL with an explicit port",
+  );
+}
+
+const publicKey = process.env.STRIDE_LOCAL_SUPABASE_PUBLIC_KEY;
+const adminKey = process.env.STRIDE_LOCAL_SUPABASE_ADMIN_KEY;
+if (!publicKey || !adminKey) {
+  throw new Error(
+    "Set the local Supabase public and admin key environment variables before running integration tests",
+  );
+}
+
+async function request(
+  path,
+  { method = "GET", key = publicKey, token, body, headers = {} } = {},
+) {
+  const url = new URL(path, baseUrl);
+  if (url.origin !== baseUrl.origin)
+    throw new Error("Local integration request escaped the loopback origin");
+  const response = await fetch(url, {
+    method,
+    redirect: "error",
+    signal: AbortSignal.timeout(30000),
+    headers: {
+      apikey: key,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Accept: "application/json",
+      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      ...headers,
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  const raw = await response.text();
+  let data;
+  try {
+    data = raw ? JSON.parse(raw) : null;
+  } catch {
+    data = null;
+  }
+  return { status: response.status, data };
+}
+
+function assertOk(result, context) {
+  assert.ok(
+    result.status >= 200 && result.status < 300,
+    `${context}: HTTP ${result.status}, code ${result.data?.code ?? "unknown"}`,
+  );
+  return result.data;
+}
+
+function assertDenied(result, context) {
+  assert.ok(
+    [401, 403].includes(result.status),
+    `${context}: expected access denial, got HTTP ${result.status}, code ${result.data?.code ?? "unknown"}`,
+  );
+}
+
+function assertInvalid(result, context) {
+  assert.ok(
+    result.status >= 400 && result.status < 500,
+    `${context}: expected client error, got HTTP ${result.status}`,
+  );
+}
+
+async function createUser(label) {
+  const email = `stride-phase3-${label}-${randomUUID()}@example.test`;
+  const password = randomBytes(24).toString("base64url");
+  const created = assertOk(
+    await request("/auth/v1/admin/users", {
+      method: "POST",
+      key: adminKey,
+      body: { email, password, email_confirm: true },
+    }),
+    `create local test user ${label}`,
+  );
+  try {
+    assert.match(created.id, /^[0-9a-f-]{36}$/i);
+    const signedIn = assertOk(
+      await request("/auth/v1/token?grant_type=password", {
+        method: "POST",
+        body: { email, password },
+      }),
+      `sign in local test user ${label}`,
+    );
+    assert.ok(signedIn.access_token, `missing Auth token for ${label}`);
+    return { id: created.id, token: signedIn.access_token };
+  } catch (error) {
+    if (created.id) {
+      try {
+        await deleteUser({ id: created.id });
+      } catch (cleanupError) {
+        throw new AggregateError(
+          [error, cleanupError],
+          `Could not sign in or remove local test user ${label}`,
+        );
+      }
+    }
+    throw error;
+  }
+}
+
+async function deleteUser(user) {
+  const result = await request(
+    `/auth/v1/admin/users/${encodeURIComponent(user.id)}`,
+    {
+      method: "DELETE",
+      key: adminKey,
+    },
+  );
+  assertOk(result, "remove local test user");
+}
+
+async function apply(
+  token,
+  {
+    operationId = randomUUID(),
+    entity,
+    recordId,
+    action = "upsert",
+    payload = null,
+    revision = null,
+  },
+) {
+  return request("/rest/v1/rpc/apply_sync_operation", {
+    method: "POST",
+    token,
+    body: {
+      p_operation_id: operationId,
+      p_entity: entity,
+      p_record_id: recordId,
+      p_action: action,
+      p_payload: payload,
+      p_expected_revision: revision,
+    },
+  });
+}
+
+async function pull(token, cursor = "0", limit = 100) {
+  return request("/rest/v1/rpc/get_sync_changes", {
+    method: "POST",
+    token,
+    body: { p_after: cursor, p_limit: limit },
+  });
+}
+
+async function rows(token, table, query = "select=*") {
+  return request(`/rest/v1/${table}?${query}`, { token });
+}
+
+function subject(id, name = "Study") {
+  return {
+    id,
+    name,
+    description: "",
+    icon: "book",
+    color: "#8b91e8",
+    created_at: "2026-09-21T10:00:00.000Z",
+    archived: 0,
+  };
+}
+
+function sessionPayload(id, subjectId) {
+  return {
+    session: {
+      id,
+      subject_id: subjectId,
+      started_at: "2026-09-21T23:50:00.000Z",
+      ended_at: "2026-09-22T00:10:00.000Z",
+      duration_seconds: 1200,
+      session_title: "Practice",
+      notes: "",
+      mode: "stopwatch",
+      completed: 1,
+    },
+    slices: [
+      { session_id: id, day: "2026-09-21", seconds: 600 },
+      { session_id: id, day: "2026-09-22", seconds: 600 },
+    ],
+  };
+}
+
+test(
+  "local Supabase Auth and PostgREST integration",
+  { timeout: 180000 },
+  async (t) => {
+    const users = [];
+    try {
+      users.push(await createUser("a"));
+      users.push(await createUser("b"));
+      const [alice, bob] = users;
+      const prefix = `integration-${randomUUID()}`;
+
+      await t.test(
+        "public Data API is available; private schema and anonymous data are denied",
+        async () => {
+          const publicRead = await rows(
+            alice.token,
+            "stride_subjects",
+            "select=id&limit=0",
+          );
+          assertOk(publicRead, "public schema API exposure");
+          const hidden = await request(
+            "/rest/v1/stride_sync_changes?select=sequence&limit=0",
+            {
+              token: alice.token,
+              headers: { "Accept-Profile": "stride_private" },
+            },
+          );
+          assert.equal(
+            hidden.data?.code,
+            "PGRST106",
+            `private schema exposure: HTTP ${hidden.status}`,
+          );
+          assertDenied(
+            await rows(undefined, "stride_subjects"),
+            "anonymous table read",
+          );
+          assertDenied(await pull(undefined), "anonymous sync pull");
+          assertDenied(
+            await apply(undefined, {
+              entity: "subject",
+              recordId: `${prefix}-anon`,
+              payload: subject(`${prefix}-anon`),
+            }),
+            "anonymous sync write",
+          );
+        },
+      );
+
+      await t.test(
+        "two signed-in users have isolated reads, writes, and subject references",
+        async () => {
+          const sameId = `${prefix}-same-id`;
+          assert.equal(
+            assertOk(
+              await apply(alice.token, {
+                entity: "subject",
+                recordId: sameId,
+                payload: subject(sameId, "Alice only"),
+              }),
+              "Alice subject",
+            ).status,
+            "applied",
+          );
+          assert.equal(
+            assertOk(
+              await apply(bob.token, {
+                entity: "subject",
+                recordId: sameId,
+                payload: subject(sameId, "Bob only"),
+              }),
+              "Bob subject",
+            ).status,
+            "applied",
+          );
+          const query = `select=id,name&${new URLSearchParams({ id: `eq.${sameId}` })}`;
+          assert.deepEqual(
+            assertOk(
+              await rows(alice.token, "stride_subjects", query),
+              "Alice read",
+            ).map(({ name }) => name),
+            ["Alice only"],
+          );
+          assert.deepEqual(
+            assertOk(
+              await rows(bob.token, "stride_subjects", query),
+              "Bob read",
+            ).map(({ name }) => name),
+            ["Bob only"],
+          );
+          const bobChanges = assertOk(
+            await pull(bob.token),
+            "Bob same-ID change history",
+          ).changes.filter(
+            ({ entity, record_id }) =>
+              entity === "subject" && record_id === sameId,
+          );
+          assert.deepEqual(
+            bobChanges.map(({ payload }) => payload.name),
+            ["Bob only"],
+          );
+          const directPath = `/rest/v1/stride_subjects?${new URLSearchParams({ id: `eq.${sameId}` })}`;
+          assertDenied(
+            await request(directPath, {
+              method: "PATCH",
+              token: alice.token,
+              body: { name: "Bypassed sync" },
+            }),
+            "authenticated direct subject update",
+          );
+          assertDenied(
+            await request(directPath, {
+              method: "DELETE",
+              token: alice.token,
+            }),
+            "authenticated direct subject delete",
+          );
+          assert.deepEqual(
+            assertOk(
+              await rows(alice.token, "stride_subjects", query),
+              "Alice row after denied direct writes",
+            ).map(({ name }) => name),
+            ["Alice only"],
+          );
+          const forgedId = `${prefix}-forged`;
+          assertInvalid(
+            await apply(alice.token, {
+              entity: "subject",
+              recordId: forgedId,
+              payload: { ...subject(forgedId), owner_id: bob.id },
+            }),
+            "forged RPC owner",
+          );
+          assertDenied(
+            await request("/rest/v1/stride_subjects", {
+              method: "POST",
+              token: alice.token,
+              body: { owner_id: bob.id, ...subject(forgedId) },
+            }),
+            "direct forged-owner insert",
+          );
+          const aOnly = `${prefix}-a-only`;
+          assertOk(
+            await apply(alice.token, {
+              entity: "subject",
+              recordId: aOnly,
+              payload: subject(aOnly),
+            }),
+            "Alice private subject",
+          );
+          assertInvalid(
+            await apply(bob.token, {
+              entity: "session",
+              recordId: `${prefix}-foreign-session`,
+              payload: sessionPayload(`${prefix}-foreign-session`, aOnly),
+            }),
+            "cross-user subject reference",
+          );
+        },
+      );
+
+      await t.test(
+        "settings RPC and preference reads are account-isolated",
+        async () => {
+          const aliceBefore = assertOk(
+            await pull(alice.token),
+            "Alice settings cursor",
+          ).cursor;
+          const bobBefore = assertOk(
+            await pull(bob.token),
+            "Bob settings cursor",
+          ).cursor;
+          assert.equal(
+            assertOk(
+              await apply(alice.token, {
+                entity: "settings",
+                recordId: "settings",
+                payload: {
+                  minimum: 20,
+                  goal: 60,
+                  presets: "25,45,60",
+                  weekStart: 1,
+                },
+              }),
+              "Alice settings RPC",
+            ).status,
+            "applied",
+          );
+          assert.equal(
+            assertOk(
+              await apply(bob.token, {
+                entity: "settings",
+                recordId: "settings",
+                payload: {
+                  minimum: 15,
+                  goal: 45,
+                  presets: "15,30,45",
+                  weekStart: 0,
+                },
+              }),
+              "Bob settings RPC",
+            ).status,
+            "applied",
+          );
+          const preferences = "select=minimum,goal,presets,week_start";
+          assert.deepEqual(
+            assertOk(
+              await rows(alice.token, "stride_preferences", preferences),
+              "Alice preferences",
+            ).map(({ minimum, goal, presets, week_start }) => ({
+              minimum,
+              goal,
+              presets,
+              week_start,
+            })),
+            [{ minimum: 20, goal: 60, presets: "25,45,60", week_start: 1 }],
+          );
+          assert.deepEqual(
+            assertOk(
+              await rows(bob.token, "stride_preferences", preferences),
+              "Bob preferences",
+            ).map(({ minimum, goal, presets, week_start }) => ({
+              minimum,
+              goal,
+              presets,
+              week_start,
+            })),
+            [{ minimum: 15, goal: 45, presets: "15,30,45", week_start: 0 }],
+          );
+          const aliceChanges = assertOk(
+            await pull(alice.token, aliceBefore),
+            "Alice settings change",
+          ).changes;
+          const bobChanges = assertOk(
+            await pull(bob.token, bobBefore),
+            "Bob settings change",
+          ).changes;
+          assert.deepEqual(
+            aliceChanges.map(({ entity, record_id, payload }) => [
+              entity,
+              record_id,
+              payload.minimum,
+            ]),
+            [["settings", "settings", 20]],
+          );
+          assert.deepEqual(
+            bobChanges.map(({ entity, record_id, payload }) => [
+              entity,
+              record_id,
+              payload.minimum,
+            ]),
+            [["settings", "settings", 15]],
+          );
+        },
+      );
+
+      await t.test(
+        "session and allocation days are atomic; invalid totals roll back",
+        async () => {
+          const subjectId = `${prefix}-session-subject`;
+          const sessionId = `${prefix}-session`;
+          assertOk(
+            await apply(alice.token, {
+              entity: "subject",
+              recordId: subjectId,
+              payload: subject(subjectId),
+            }),
+            "session subject",
+          );
+          const before = assertOk(
+            await pull(alice.token),
+            "pull before invalid session",
+          ).cursor;
+          const invalid = sessionPayload(sessionId, subjectId);
+          invalid.slices[1].seconds = 599;
+          const operationId = randomUUID();
+          assertInvalid(
+            await apply(alice.token, {
+              operationId,
+              entity: "session",
+              recordId: sessionId,
+              payload: invalid,
+            }),
+            "invalid allocation total",
+          );
+          assert.deepEqual(
+            assertOk(
+              await rows(
+                alice.token,
+                "stride_sessions",
+                `select=id&id=eq.${sessionId}`,
+              ),
+              "session after rollback",
+            ),
+            [],
+          );
+          assert.equal(
+            assertOk(await pull(alice.token), "cursor after rollback").cursor,
+            before,
+          );
+          const duplicateId = `${prefix}-duplicate-day`;
+          const duplicateDays = sessionPayload(duplicateId, subjectId);
+          duplicateDays.slices[1].day = duplicateDays.slices[0].day;
+          assertInvalid(
+            await apply(alice.token, {
+              entity: "session",
+              recordId: duplicateId,
+              payload: duplicateDays,
+            }),
+            "duplicate allocation day",
+          );
+          assert.deepEqual(
+            assertOk(
+              await rows(
+                alice.token,
+                "stride_sessions",
+                `select=id&id=eq.${duplicateId}`,
+              ),
+              "duplicate-day session rollback",
+            ),
+            [],
+          );
+          assert.equal(
+            assertOk(await pull(alice.token), "cursor after duplicate rollback")
+              .cursor,
+            before,
+          );
+          const created = assertOk(
+            await apply(alice.token, {
+              operationId,
+              entity: "session",
+              recordId: sessionId,
+              payload: sessionPayload(sessionId, subjectId),
+            }),
+            "valid session retry after rollback",
+          );
+          assert.equal(created.status, "applied");
+          const days = assertOk(
+            await rows(
+              alice.token,
+              "stride_allocations",
+              `select=day,seconds&session_id=eq.${sessionId}&order=day.asc`,
+            ),
+            "daily allocations",
+          );
+          assert.deepEqual(
+            days.map((day) => day.day),
+            ["2026-09-21", "2026-09-22"],
+          );
+          assert.equal(
+            days.reduce((sum, day) => sum + Number(day.seconds), 0),
+            1200,
+          );
+          assert.deepEqual(
+            assertOk(
+              await rows(
+                bob.token,
+                "stride_allocations",
+                `select=day&session_id=eq.${sessionId}`,
+              ),
+              "Bob allocation read",
+            ),
+            [],
+          );
+          const delta = assertOk(
+            await pull(alice.token, before),
+            "session change",
+          ).changes;
+          assert.equal(delta.length, 1);
+          assert.equal(delta[0].payload.slices.length, 2);
+        },
+      );
+
+      await t.test(
+        "operation IDs give safe retries and stale revisions give conflicts",
+        async () => {
+          const id = `${prefix}-revision`;
+          const input = {
+            operationId: randomUUID(),
+            entity: "subject",
+            recordId: id,
+            payload: subject(id, "Original"),
+          };
+          const before = assertOk(
+            await pull(alice.token),
+            "retry start cursor",
+          ).cursor;
+          const [submitted, duplicate] = await Promise.all([
+            apply(alice.token, input),
+            apply(alice.token, input),
+          ]);
+          const first = assertOk(submitted, "initial subject");
+          assert.deepEqual(
+            assertOk(duplicate, "concurrent duplicate request"),
+            first,
+          );
+          assert.equal(
+            assertOk(await pull(alice.token, before), "deduplicated changes")
+              .changes.length,
+            1,
+          );
+          assert.deepEqual(
+            assertOk(await apply(alice.token, input), "same request retry"),
+            first,
+          );
+          assertInvalid(
+            await apply(alice.token, {
+              ...input,
+              payload: subject(id, "Changed under same ID"),
+            }),
+            "operation ID reuse with different request",
+          );
+          const updated = assertOk(
+            await apply(alice.token, {
+              entity: "subject",
+              recordId: id,
+              payload: subject(id, "Winner"),
+              revision: first.revision,
+            }),
+            "valid revision update",
+          );
+          assert.equal(updated.status, "applied");
+          const stale = assertOk(
+            await apply(alice.token, {
+              entity: "subject",
+              recordId: id,
+              payload: subject(id, "Stale"),
+              revision: first.revision,
+            }),
+            "stale revision response",
+          );
+          assert.equal(stale.status, "conflict");
+          assert.equal(stale.current_revision, updated.revision);
+          assert.deepEqual(
+            assertOk(
+              await rows(
+                alice.token,
+                "stride_subjects",
+                `select=name&id=eq.${id}`,
+              ),
+              "winner retained",
+            ).map(({ name }) => name),
+            ["Winner"],
+          );
+        },
+      );
+
+      await t.test(
+        "paginated pull is ordered, owner-scoped, and includes deletion tombstones",
+        async () => {
+          const start = assertOk(
+            await pull(alice.token),
+            "start cursor",
+          ).cursor;
+          const id = `${prefix}-deletion`;
+          const child = `${prefix}-deletion-session`;
+          const created = assertOk(
+            await apply(alice.token, {
+              entity: "subject",
+              recordId: id,
+              payload: subject(id),
+            }),
+            "subject for deletion",
+          );
+          assertOk(
+            await apply(alice.token, {
+              entity: "session",
+              recordId: child,
+              payload: sessionPayload(child, id),
+            }),
+            "child for deletion",
+          );
+          assertOk(
+            await apply(alice.token, {
+              entity: "subject",
+              recordId: id,
+              action: "delete",
+              revision: created.revision,
+            }),
+            "subject deletion",
+          );
+          const collected = [];
+          let cursor = start;
+          for (let page = 0; page < 6; page++) {
+            const result = assertOk(
+              await pull(alice.token, cursor, 2),
+              "paged pull",
+            );
+            collected.push(...result.changes);
+            assert.ok(BigInt(result.cursor) >= BigInt(cursor));
+            cursor = result.cursor;
+            if (!result.has_more) break;
+          }
+          assert.deepEqual(
+            collected.map(({ entity, action }) => [entity, action]),
+            [
+              ["subject", "upsert"],
+              ["session", "upsert"],
+              ["session", "delete"],
+              ["subject", "delete"],
+            ],
+          );
+          assert.ok(
+            collected.every(
+              ({ sequence }, index) =>
+                index === 0 ||
+                BigInt(sequence) > BigInt(collected[index - 1].sequence),
+            ),
+          );
+          assert.deepEqual(
+            assertOk(
+              await rows(
+                alice.token,
+                "stride_sessions",
+                `select=id&id=eq.${child}`,
+              ),
+              "deleted child",
+            ),
+            [],
+          );
+          assert.deepEqual(
+            assertOk(
+              await rows(bob.token, "stride_subjects", `select=id&id=eq.${id}`),
+              "Bob deleted subject read",
+            ),
+            [],
+          );
+          const bobChanges = assertOk(
+            await pull(bob.token),
+            "Bob change history",
+          ).changes;
+          assert.ok(
+            bobChanges.every(
+              ({ record_id }) => record_id !== id && record_id !== child,
+            ),
+          );
+        },
+      );
+
+      await t.test(
+        "an out-of-order session can succeed when retried after its subject arrives",
+        async () => {
+          const subjectId = `${prefix}-late-subject`;
+          const sessionId = `${prefix}-late-session`;
+          const input = {
+            operationId: randomUUID(),
+            entity: "session",
+            recordId: sessionId,
+            payload: sessionPayload(sessionId, subjectId),
+          };
+          const before = assertOk(
+            await pull(bob.token),
+            "out-of-order start cursor",
+          ).cursor;
+          assertInvalid(await apply(bob.token, input), "missing subject");
+          assert.equal(
+            assertOk(await pull(bob.token), "out-of-order failed cursor")
+              .cursor,
+            before,
+          );
+          assertOk(
+            await apply(bob.token, {
+              entity: "subject",
+              recordId: subjectId,
+              payload: subject(subjectId),
+            }),
+            "subject arrives",
+          );
+          assert.equal(
+            assertOk(await apply(bob.token, input), "out-of-order retry")
+              .status,
+            "applied",
+          );
+          assert.deepEqual(
+            assertOk(
+              await rows(
+                bob.token,
+                "stride_sessions",
+                `select=id&id=eq.${sessionId}`,
+              ),
+              "retried session",
+            ).map(({ id }) => id),
+            [sessionId],
+          );
+        },
+      );
+
+      await t.test(
+        "concurrent requests serialize one winner and preserve the loser as a conflict",
+        async () => {
+          const id = `${prefix}-race`;
+          const created = assertOk(
+            await apply(alice.token, {
+              entity: "subject",
+              recordId: id,
+              payload: subject(id, "Before race"),
+            }),
+            "race subject",
+          );
+          const before = assertOk(
+            await pull(alice.token),
+            "race start cursor",
+          ).cursor;
+          const results = await Promise.all(
+            ["First", "Second"].map((name) =>
+              apply(alice.token, {
+                entity: "subject",
+                recordId: id,
+                payload: subject(id, name),
+                revision: created.revision,
+              }),
+            ),
+          );
+          const bodies = results.map((result, index) =>
+            assertOk(result, `concurrent request ${index + 1}`),
+          );
+          assert.deepEqual(bodies.map(({ status }) => status).sort(), [
+            "applied",
+            "conflict",
+          ]);
+          assert.equal(
+            assertOk(await pull(alice.token, before), "race changes").changes
+              .length,
+            1,
+          );
+          const finalName = assertOk(
+            await rows(
+              alice.token,
+              "stride_subjects",
+              `select=name&id=eq.${id}`,
+            ),
+            "race final row",
+          )[0].name;
+          assert.ok(["First", "Second"].includes(finalName));
+        },
+      );
+    } finally {
+      const cleanup = await Promise.allSettled(users.map(deleteUser));
+      for (const result of cleanup)
+        if (result.status === "rejected") throw result.reason;
+    }
+  },
+);

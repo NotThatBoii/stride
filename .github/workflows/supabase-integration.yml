@@ -1,0 +1,52 @@
+name: Verify local Supabase integration
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/supabase-integration.yml
+      - package.json
+      - package-lock.json
+      - scripts/run-local-integration.mjs
+      - supabase/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-supabase:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      # The tests use only the disposable stack created on this runner.
+      SUPABASE_ACCESS_TOKEN: ""
+      SUPABASE_DB_PASSWORD: ""
+      SUPABASE_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - name: Start disposable local Supabase
+        shell: bash
+        run: |
+          if ! npx --no-install supabase start >/dev/null 2>&1; then
+            echo "::error::Local Supabase failed to start. CLI output was withheld because it can contain local keys."
+            exit 1
+          fi
+      - name: Apply migrations to local database
+        shell: bash
+        run: |
+          if ! npx --no-install supabase db reset --local >/dev/null 2>&1; then
+            echo "::error::Local database reset failed. CLI output was withheld because it can contain local keys."
+            exit 1
+          fi
+      - run: npm run test:db
+      - run: npm run test:integration
+      - name: Stop disposable local Supabase
+        if: always()
+        shell: bash
+        run: npx --no-install supabase stop --no-backup >/dev/null 2>&1 || true
