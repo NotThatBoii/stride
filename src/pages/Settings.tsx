@@ -5,6 +5,7 @@ import { restoreData, saveSettings } from "../lib/storage";
 import { parseBackup } from "../lib/validation";
 import type { Data } from "../models";
 import { Modal } from "../components/UI";
+import { AccountPanel } from "../components/AccountPanel";
 import {
   appVersion,
   isDesktop,
@@ -89,6 +90,7 @@ export default function Settings() {
           <p>Study preferences, appearance, and data.</p>
         </div>
       </div>
+      <AccountPanel />
       <form
         className="settings-form"
         onSubmit={(e) => {

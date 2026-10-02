@@ -1006,6 +1006,106 @@ kbd {
 .settings-form {
   max-width: 730px;
 }
+.account-panel {
+  width: min(100%, 730px);
+  margin: 0 0 28px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: linear-gradient(120deg, #7b89c10d, var(--panel));
+}
+.account-panel-heading,
+.account-identity {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.account-panel-heading p {
+  max-width: 540px;
+  margin-bottom: 0;
+}
+.account-status {
+  flex-shrink: 0;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.account-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin: 20px 0;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--input);
+}
+.account-tab {
+  background: transparent;
+  color: var(--muted);
+}
+.account-tab.active {
+  background: var(--raised);
+  color: var(--text);
+}
+.account-form {
+  max-width: 420px;
+}
+.account-form label {
+  margin-bottom: 14px;
+}
+.account-identity {
+  align-items: center;
+  margin-top: 22px;
+}
+.account-identity strong {
+  display: block;
+  margin-top: 7px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.account-message {
+  margin: 16px 0 0;
+}
+.anonymous-history-decision {
+  position: fixed;
+  z-index: 90;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 16px 40px #0006;
+}
+.anonymous-history-decision > div:first-child {
+  flex: 1 1 330px;
+}
+.anonymous-history-decision h2 {
+  margin-bottom: 5px;
+}
+.anonymous-history-decision p {
+  margin: 0;
+}
+.anonymous-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.anonymous-history-decision > .error {
+  flex-basis: 100%;
+}
 .settings-section {
   padding-bottom: 15px;
   margin-bottom: 25px;
@@ -1328,6 +1428,10 @@ dialog::backdrop {
   margin: 0 0 0 auto;
   font-size: 10px;
 }
+.onboarding-account {
+  margin-left: 12px;
+  font-size: 12px;
+}
 .onboarding-content {
   width: min(100%, 480px);
   margin: auto;
@@ -1646,6 +1750,9 @@ dialog::backdrop {
   .onboarding-brand .eyebrow {
     display: none;
   }
+  .onboarding-account {
+    margin-left: auto;
+  }
   .timer-clock {
     letter-spacing: -2px;
   }
@@ -1654,6 +1761,23 @@ dialog::backdrop {
   }
   .today-value {
     font-size: 33px;
+  }
+}
+@media (max-width: 560px) {
+  .account-panel {
+    padding: 18px;
+  }
+  .account-panel-heading,
+  .account-identity {
+    flex-wrap: wrap;
+  }
+  .anonymous-history-decision {
+    bottom: 12px;
+    width: calc(100vw - 24px);
+    padding: 16px;
+  }
+  .anonymous-history-actions {
+    width: 100%;
   }
 }
 @media (prefers-reduced-motion: reduce) {

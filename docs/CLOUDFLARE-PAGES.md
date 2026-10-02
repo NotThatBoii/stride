@@ -1,6 +1,6 @@
 # Deploy Stride to Cloudflare Pages
 
-Stride's web build is a static React/Vite site. Cloudflare Pages Free serves it from a `pages.dev` subdomain; study data remains in the visitor's browser in IndexedDB. The app requires no sign-in, server-side database, paid service, or service worker.
+Stride's web build is a static React/Vite site. Cloudflare Pages Free serves it from a `pages.dev` subdomain; study data remains in the visitor's browser in IndexedDB. Sign-in is optional. Phase 4 can connect to Supabase Auth, while study data synchronization remains disabled. The app requires no account, paid service, or service worker for local use.
 
 ## Connect the repository
 
@@ -8,19 +8,20 @@ Stride's web build is a static React/Vite site. Cloudflare Pages Free serves it 
 2. Choose **Create application → Pages → Connect to Git** and authorize Cloudflare to access `NotThatBoii/stride` in GitHub if prompted.
 3. Select the repository and configure the Pages project:
 
-   | Setting | Value |
-   | --- | --- |
-   | Framework preset | React (Vite) |
-   | Production branch | `main` |
-   | Root directory | `/` (repository root) |
-   | Build command | `npm ci --legacy-peer-deps && npm run build` |
-   | Build output directory | `dist` |
+   | Setting                | Value                                        |
+   | ---------------------- | -------------------------------------------- |
+   | Framework preset       | React (Vite)                                 |
+   | Production branch      | `main`                                       |
+   | Root directory         | `/` (repository root)                        |
+   | Build command          | `npm ci --legacy-peer-deps && npm run build` |
+   | Build output directory | `dist`                                       |
 
 4. Save and deploy. The root `.nvmrc` selects Node.js 22 for the Pages build.
 5. In **Settings → Environment variables**, add `SKIP_DEPENDENCY_INSTALL` with value `1` for both **Production** and **Preview**. This prevents Pages from running a second, implicit install; the build command performs the locked install itself.
+   To enable optional accounts in the production build after Phase 4 merges, also set `VITE_SUPABASE_URL` to `https://fotgomkjwbahxmmovzmn.supabase.co` and `VITE_SUPABASE_PUBLISHABLE_KEY` to that project's publishable key for **Production** only, then run a new deployment. See [Phase 4 Auth setup](PHASE_4_AUTH.md#local-setup). Do not set a secret or service-role key.
 6. Keep the included `*.pages.dev` address as the site URL. Use a project name available in your Cloudflare account (for example, `stride` if available); Pages will show the resulting free subdomain in the project settings.
 
-Cloudflare builds the production branch at the project's `pages.dev` address and can create preview deployments for other branches. To preview this development branch, push `codex/phase-1-cloudflare` to GitHub and open the branch's preview URL from **Workers & Pages → Deployments**. Keep `main` as the production branch until you choose to release the change.
+Cloudflare builds the production branch at the project's `pages.dev` address and can create preview deployments for other branches. Keep `main` as the production branch until you choose to release a change. Preview builds should leave Auth unconfigured until their redirect behavior has been deliberately tested.
 
 ## Verify a deployment
 
