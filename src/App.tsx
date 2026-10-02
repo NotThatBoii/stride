@@ -15,6 +15,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { useStride } from "./state";
+import { useAuth } from "./auth/AuthProvider";
 import { dayKey, formatTime, parseDay } from "./lib/analytics";
 import { elapsed, activeSegments } from "./lib/timer";
 import { saveRunning } from "./lib/storage";
@@ -28,6 +29,10 @@ import Insights from "./pages/Insights";
 import Settings from "./pages/Settings";
 import SubjectEditor from "./components/SubjectEditor";
 import Onboarding from "./components/Onboarding";
+import {
+  AccountPanel,
+  AnonymousHistoryDecision,
+} from "./components/AccountPanel";
 import { Modal } from "./components/UI";
 import { SessionList } from "./components/Sessions";
 type Page = "Home" | "Subjects" | "Focus" | "History" | "Insights" | "Settings";
@@ -41,6 +46,8 @@ const links = [
 ] as const;
 export default function App() {
   const { data, now, act, busy, error, clearError } = useStride();
+  const auth = useAuth();
+  const [accountOpen, setAccountOpen] = useState(false);
   const [page, setPage] = useState<Page>("Home");
   const [subject, setSubject] = useState<string>();
   const [focusSubject, setFocusSubject] = useState<string>();
@@ -116,10 +123,13 @@ export default function App() {
         ? s.subject_id === subject
         : data.subjects.some((x) => x.id === s.subject_id && !x.archived)),
   );
+  const showAuthError = Boolean(
+    auth.error && page !== "Settings" && !accountOpen,
+  );
   return (
     <>
       {!data.settings.onboarded ? (
-        <Onboarding />
+        <Onboarding onAccount={() => setAccountOpen(true)} />
       ) : (
         <div
           className={`app ${collapsed ? "collapsed" : ""} ${page === "Focus" && timer ? "focused-layout" : ""}`}
@@ -179,11 +189,18 @@ export default function App() {
               <button
                 className="workspace-profile"
                 onClick={() => navigate("Settings")}
-                aria-label="Personal workspace settings"
+                aria-label="Account and workspace settings"
               >
                 <span className="profile-avatar">S</span>
                 <span>
-                  Personal Workspace<small>Local · Free forever</small>
+                  {auth.status === "signed_in"
+                    ? (auth.user?.email ?? "Account workspace")
+                    : "Personal Workspace"}
+                  <small>
+                    {auth.status === "signed_in"
+                      ? "Local account workspace · Sync off"
+                      : "Local · Free forever"}
+                  </small>
                 </span>
               </button>
             </div>
@@ -206,7 +223,11 @@ export default function App() {
                     : page}
               </span>
               <span className="topbar-note">
-                {timer ? "● Focus session in progress" : "Local workspace"}
+                {timer
+                  ? "● Focus session in progress"
+                  : auth.status === "signed_in"
+                    ? "Local account workspace · Sync off"
+                    : "Local workspace"}
               </span>
             </header>
             <div className="page-content" key={subject ?? page}>
@@ -261,17 +282,30 @@ export default function App() {
           )}
         </div>
       )}
-      {(error || notificationError) && (
+      <AnonymousHistoryDecision />
+      {accountOpen && (
+        <Modal title="Account" onClose={() => setAccountOpen(false)}>
+          <AccountPanel />
+        </Modal>
+      )}
+      {(error || notificationError || showAuthError) && (
         <div className="error-toast" role="alert">
           <strong>
-            {error ? "Could not save or load data" : "Notification unavailable"}
+            {error
+              ? "Could not save or load data"
+              : showAuthError
+                ? "Account connection issue"
+                : "Notification unavailable"}
           </strong>
-          <span>{error || notificationError}</span>
+          <span>
+            {error || (showAuthError ? auth.error : null) || notificationError}
+          </span>
           <button
             aria-label="Dismiss error"
             className="icon-button"
             onClick={() => {
               clearError();
+              auth.clearError();
               setNotificationError("");
             }}
           >

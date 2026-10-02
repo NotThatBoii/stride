@@ -79,3 +79,18 @@ test("switching local workspaces clears visible account records and view state",
   await expect(page.locator("body")).toContainText("Anonymous history");
   await expect(page.locator("body")).not.toContainText("Account A history");
 });
+
+test("anonymous onboarding works when Supabase is not configured", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Account" })).toContainText(
+    "Account access is unavailable in this build",
+  );
+  await page.getByRole("button", { name: "Close dialog" }).click();
+  await page.getByRole("button", { name: "Find your stride" }).click();
+  await expect(
+    page.getByRole("heading", { name: "What are you learning?" }),
+  ).toBeVisible();
+});

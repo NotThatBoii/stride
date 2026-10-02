@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowRight, Check, Plus } from "lucide-react";
 import { useStride } from "../state";
 import { saveSettings, saveSubject } from "../lib/storage";
-export default function Onboarding() {
+export default function Onboarding({ onAccount }: { onAccount: () => void }) {
   const { data, act, busy } = useStride();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
@@ -12,6 +12,9 @@ export default function Onboarding() {
       <div className="onboarding-brand">
         <span className="brand-mark">s</span> stride
         <span className="eyebrow">STRIDE / GET STARTED</span>
+        <button className="subtle onboarding-account" onClick={onAccount}>
+          Account
+        </button>
       </div>
       <div className="onboarding-content">
         <div className="step-dots">
