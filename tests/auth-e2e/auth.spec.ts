@@ -156,6 +156,15 @@ async function signIn(
   await page.locator(".account-form input[type=email]").fill(email);
   await page.locator(".account-form input[type=password]").fill(password);
   await page.locator(".account-form button").click();
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const storage = await import("/src/lib/storage.ts");
+        return storage.getActiveWorkspace().accountId;
+      }),
+    )
+    .toBe(users[email]);
+  await expect(page.locator(".boot")).toHaveCount(0);
 }
 
 test("account switching keeps three local histories isolated across reload and sign-out", async ({
@@ -181,7 +190,9 @@ test("account switching keeps three local histories isolated across reload and s
   await expect(page.locator(".floating-timer")).toBeVisible();
 
   await signIn(page, "first@example.test");
-  await expect(page.locator("body")).not.toContainText("Anonymous history");
+  await expect(
+    page.getByRole("button", { name: "Anonymous history", exact: true }),
+  ).toHaveCount(0);
   await expect(page.locator(".floating-timer")).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Find your stride" }),

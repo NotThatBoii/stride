@@ -3,6 +3,7 @@ import { defineConfig } from "@playwright/test";
 // A separate Vite process keeps the mock Auth configuration out of normal E2E runs.
 export default defineConfig({
   testDir: "./tests/auth-e2e",
+  workers: 1,
   use: {
     baseURL: "http://127.0.0.1:1421",
     launchOptions: { channel: "msedge" },
