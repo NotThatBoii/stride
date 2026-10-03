@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { isDesktop } from "./platform";
+import { syncAwareFetch } from "./sync/client";
 
 const env = (
   import.meta as ImportMeta & { env?: Record<string, string | undefined> }
@@ -33,6 +34,7 @@ export function createOptionalSupabaseClient(
       return null;
 
     return createClient(address.origin, publishableKey, {
+      global: { fetch: syncAwareFetch },
       auth: {
         autoRefreshToken: true,
         persistSession: true,

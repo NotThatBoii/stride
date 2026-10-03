@@ -30,6 +30,8 @@ import Settings from "./pages/Settings";
 import SubjectEditor from "./components/SubjectEditor";
 import Onboarding from "./components/Onboarding";
 import { AccountPanel } from "./components/AccountPanel";
+import { LegacyImport } from "./components/HistoryImport";
+import { syncLabel, useSync } from "./sync/SyncProvider";
 import { Modal } from "./components/UI";
 import { SessionList } from "./components/Sessions";
 type Page = "Home" | "Subjects" | "Focus" | "History" | "Insights" | "Settings";
@@ -44,6 +46,8 @@ const links = [
 export default function App() {
   const { data, now, act, busy, error, clearError } = useStride();
   const auth = useAuth();
+  const sync = useSync();
+  const syncStatus = syncLabel(sync.phase, sync.pending, sync.conflicts);
   const [accountOpen, setAccountOpen] = useState(false);
   const [page, setPage] = useState<Page>("Home");
   const [subject, setSubject] = useState<string>();
@@ -125,6 +129,7 @@ export default function App() {
   );
   return (
     <>
+      <LegacyImport />
       {!data.settings.onboarded ? (
         <Onboarding onAccount={() => setAccountOpen(true)} />
       ) : (
@@ -191,7 +196,7 @@ export default function App() {
                 <span className="profile-avatar">S</span>
                 <span>
                   {auth.user?.email ?? "Account workspace"}
-                  <small>Local account workspace · Sync off</small>
+                  <small>{syncStatus}</small>
                 </span>
               </button>
             </div>
@@ -213,11 +218,13 @@ export default function App() {
                     ? "Home"
                     : page}
               </span>
-              <span className="topbar-note">
-                {timer
-                  ? "● Focus session in progress"
-                  : "Local account workspace · Sync off"}
-              </span>
+              <button
+                className="topbar-note sync-status"
+                onClick={() => navigate("Settings")}
+                aria-label={`Synchronization: ${syncStatus}`}
+              >
+                {timer ? "● Focus session in progress" : syncStatus}
+              </button>
             </header>
             <div className="page-content" key={subject ?? page}>
               {page === "Home" && (
