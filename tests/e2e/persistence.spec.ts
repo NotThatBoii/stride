@@ -1,5 +1,6 @@
 import { test, expect, chromium } from "@playwright/test";
 import { fixture } from "./fixture";
+import { mockAuth, seedAccount, signIn } from "../auth-mock";
 test("records survive a real browser restart and JSON backup round-trip", async ({}, testInfo) => {
   const profile = testInfo.outputPath("browser-profile");
   let context = await chromium.launchPersistentContext(profile, {
@@ -7,18 +8,10 @@ test("records survive a real browser restart and JSON backup round-trip", async 
     headless: true,
   });
   let page = await context.newPage();
+  await mockAuth(page);
   await page.goto("http://127.0.0.1:1420");
-  await page.evaluate(
-    (data) =>
-      localStorage.setItem("stride-browser-preview-v1", JSON.stringify(data)),
-    fixture(),
-  );
-  // The first launch already initialized an empty DB; reset this isolated test DB only.
-  await page.evaluate(async () => {
-    const { database } = await import("/src/lib/storage.ts");
-    await database.delete();
-  });
-  await page.reload();
+  await signIn(page);
+  await seedAccount(page, fixture());
   await expect(
     page.getByRole("heading", { name: "Keep your stride." }),
   ).toBeVisible();
@@ -33,6 +26,7 @@ test("records survive a real browser restart and JSON backup round-trip", async 
     headless: true,
   });
   page = await context.newPage();
+  await mockAuth(page);
   await page.goto("http://127.0.0.1:1420");
   await expect(page.locator(".subject-card")).toHaveCount(4);
   await expect(page.locator(".recent-session")).toHaveCount(4);

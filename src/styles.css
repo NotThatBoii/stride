@@ -1069,42 +1069,95 @@ kbd {
 .account-message {
   margin: 16px 0 0;
 }
-.anonymous-history-decision {
-  position: fixed;
-  z-index: 90;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+.auth-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  padding: 30px 40px;
+  background: radial-gradient(ellipse at 50% 30%, #9498ed0b, transparent 60%);
+}
+.auth-brand {
+  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  width: min(760px, calc(100vw - 32px));
-  max-height: calc(100vh - 40px);
-  overflow: auto;
-  padding: 18px 20px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
-  box-shadow: 0 16px 40px #0006;
+  gap: 10px;
+  font-size: 21px;
 }
-.anonymous-history-decision > div:first-child {
-  flex: 1 1 330px;
+.auth-card {
+  flex: none;
+  width: min(100%, 420px);
+  margin: auto;
+  padding: 48px 0;
 }
-.anonymous-history-decision h2 {
-  margin-bottom: 5px;
+.auth-card h1 {
+  font-size: 30px;
+  margin-bottom: 12px;
 }
-.anonymous-history-decision p {
-  margin: 0;
+.auth-card:before {
+  content: none;
 }
-.anonymous-history-actions {
+.auth-intro {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.auth-card .account-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  margin: 26px 0 24px;
 }
-.anonymous-history-decision > .error {
-  flex-basis: 100%;
+.auth-card .account-tab {
+  flex: 1;
+  padding: 10px;
+}
+.auth-card input {
+  padding: 12px;
+}
+.auth-card .auth-submit {
+  width: 100%;
+  margin-top: 18px;
+  justify-content: space-between;
+}
+.auth-storage-note,
+.auth-screen footer {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+.auth-storage-note {
+  margin: 22px 0 0;
+}
+.auth-screen footer {
+  padding-top: 16px;
+}
+.auth-notice {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--accent-dark);
+}
+.auth-configuration {
+  margin-top: 28px;
+}
+.auth-spinner {
+  animation: auth-spin 1s linear infinite;
+}
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-spinner {
+    animation: none;
+  }
+}
+@media (max-width: 600px) {
+  .auth-screen {
+    padding: 24px;
+  }
+  .auth-card {
+    padding: 36px 0;
+  }
 }
 .settings-section {
   padding-bottom: 15px;
@@ -1770,14 +1823,6 @@ dialog::backdrop {
   .account-panel-heading,
   .account-identity {
     flex-wrap: wrap;
-  }
-  .anonymous-history-decision {
-    bottom: 12px;
-    width: calc(100vw - 24px);
-    padding: 16px;
-  }
-  .anonymous-history-actions {
-    width: 100%;
   }
 }
 @media (prefers-reduced-motion: reduce) {
