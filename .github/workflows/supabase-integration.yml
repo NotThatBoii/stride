@@ -9,6 +9,13 @@ on:
       - package-lock.json
       - scripts/run-local-integration.mjs
       - supabase/**
+      - src/lib/sync/**
+      - src/lib/local-database.ts
+      - src/auth/**
+      - tests/sync-e2e/**
+      - tests/sync-fixture.ts
+      - playwright.sync.config.ts
+      - vitest.integration.config.ts
   workflow_dispatch:
 
 permissions:

@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Page, type Request } from "@playwright/test";
 import type { Data } from "../src/models";
 
 // Test-only server responses exercise the real Supabase client. No test auth
@@ -8,6 +8,21 @@ export const users = {
   "second@example.test": "22222222-2222-4222-8222-222222222222",
 } as const;
 export const authOrigin = "https://fotgomkjwbahxmmovzmn.supabase.co";
+
+export function requestAccount(request: Request): string | null {
+  try {
+    const token = request.headers().authorization?.replace(/^Bearer /i, "");
+    const claims = JSON.parse(
+      Buffer.from(token?.split(".")[1] ?? "", "base64url").toString(),
+    );
+    return claims.role === "authenticated" &&
+      Object.values(users).includes(claims.sub)
+      ? claims.sub
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 interface MockOptions {
   failLogout?: boolean;
@@ -70,6 +85,17 @@ export async function mockAuth(page: Page, options: MockOptions = {}) {
         body: JSON.stringify(body),
       });
     if (request.method() === "OPTIONS") return respond(200, {});
+    if (url.pathname.startsWith("/rest/v1/")) {
+      const account = requestAccount(request);
+      calls.push(`sync-authorized:${account ?? "none"}`);
+      if (!account) return respond(401, { message: "Unauthorized" });
+      // Auth regression tests keep study writes in the local outbox. The
+      // dedicated sync suite routes these RPCs to the actual Phase 3 SQL.
+      return respond(503, {
+        code: "TEST_SYNC_UNAVAILABLE",
+        message: "Study synchronization is temporarily unavailable.",
+      });
+    }
     if (url.pathname === "/auth/v1/token") {
       if (url.searchParams.get("grant_type") === "password") {
         if (options.failSignIn) return route.abort("internetdisconnected");
@@ -186,4 +212,21 @@ export function expectNoStudySync(calls: string[]) {
       (call) => call.includes("/rest/v1/") || call.includes("/rpc/"),
     ),
   ).toEqual([]);
+}
+
+export function expectAccountStudySync(
+  calls: string[],
+  allowedAccounts: string[] = [users["first@example.test"]],
+) {
+  const requests = calls.filter(
+    (call) => call.includes("/rest/v1/") && !call.startsWith("OPTIONS "),
+  );
+  const owners = calls.filter((call) => call.startsWith("sync-authorized:"));
+  expect(owners).toHaveLength(requests.length);
+  for (const owner of owners)
+    expect(allowedAccounts).toContain(owner.slice("sync-authorized:".length));
+  for (const request of requests)
+    expect(request).toMatch(
+      /^POST \/rest\/v1\/rpc\/(get_sync_changes|apply_sync_operation)$/,
+    );
 }

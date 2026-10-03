@@ -1,5 +1,7 @@
 # Phase 2 local sync foundation
 
+> Historical phase report. [Phase 5](PHASE_5_SYNC.md) now implements the worker, authenticated RPC adapter, incremental pulls, conflict resolution, and explicit legacy/JSON import on these sidecars. Phase 2's statements about unsent operations and future sync work describe its original boundary; the Phase 5 report documents current behavior.
+
 ## Database layout and migration
 
 `StrideDatabase` in `src/lib/local-database.ts` keeps Dexie version 1 and adds version 2. The existing six tables and their keys remain intact:

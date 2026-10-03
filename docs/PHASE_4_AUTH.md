@@ -1,5 +1,7 @@
 # Phase 4 authentication and local account workspaces
 
+> Authentication setup remains applicable. [Phase 5](PHASE_5_SYNC.md) now synchronizes account study history and provides explicit legacy/JSON import. The no-sync/import statements and test counts below record the Phase 4/4.1 boundary and do not describe the current Phase 5 client.
+
 Phase 4 introduced email/password authentication through the official Supabase JavaScript client and account-scoped local workspaces. [Phase 4.1](PHASE_4_1_AUTH_REQUIRED.md) now requires authentication before entering Stride. This document describes the current setup and boundaries. Study data remains in IndexedDB on the current device. Signing in selects a separate local database for that Supabase account; it does **not** upload, download, reconcile, or synchronize study records. Signed-out users and builds without valid Supabase configuration cannot enter a study workspace. The Phase 3 PostgreSQL schema, policies, and RPCs are unchanged.
 
 ## Local setup

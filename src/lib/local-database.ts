@@ -9,6 +9,7 @@ import {
   type Subject,
 } from "../models";
 import { validateData } from "./validation";
+import type { WireOperation } from "./sync/types";
 
 export type SyncEntity = "subject" | "session" | "settings";
 export type SyncPayload =
@@ -28,6 +29,8 @@ export interface PendingOperation {
   status: "pending" | "in_flight";
   created_at: string;
   updated_at: string;
+  // Frozen at the first dispatch. Retries must send this exact request.
+  wire_request?: WireOperation;
 }
 
 export interface RecordRevision {
@@ -35,6 +38,7 @@ export interface RecordRevision {
   record_id: string;
   server_revision: string;
   updated_at: string;
+  deleted?: boolean;
 }
 
 export interface SyncCursor {
@@ -53,6 +57,14 @@ export interface SyncConflict {
   remote_revision: string | null;
   created_at: string;
   resolved_at: string | null;
+  kind?: "concurrent_edit" | "parent_deleted" | "import";
+  source?: "push" | "pull" | "legacy" | "backup";
+  context?: {
+    local_tree?: Data;
+    incoming_tree?: Data;
+    import_id?: string;
+    recovered_local?: boolean;
+  };
 }
 
 export interface RecoveryCopy {
@@ -241,18 +253,21 @@ function sortedSlices(slices: Slice[]): Slice[] {
   return [...slices].sort((a, b) => a.day.localeCompare(b.day));
 }
 
-async function enqueue(
+export async function enqueueOperation(
   db: StrideDatabase,
   entity: SyncEntity,
   recordId: string,
   action: PendingOperation["action"],
   payload: SyncPayload,
+  baseRevisionOverride?: string | null,
 ): Promise<void> {
   if (!db.accountId) return;
   const pending = await db.pendingOperations
     .where("[entity+record_id]")
     .equals([entity, recordId])
-    .filter((operation) => operation.status === "pending")
+    .filter(
+      (operation) => operation.status === "pending" && !operation.wire_request,
+    )
     .first();
   const now = new Date().toISOString();
   if (pending) {
@@ -271,11 +286,25 @@ async function enqueue(
     record_id: recordId,
     action,
     payload,
-    base_revision: revision?.server_revision ?? null,
+    base_revision:
+      baseRevisionOverride === undefined
+        ? (revision?.server_revision ?? null)
+        : baseRevisionOverride,
     status: "pending",
     created_at: now,
     updated_at: now,
   });
+}
+
+const enqueue = enqueueOperation;
+
+function sharedSettings(settings: Settings) {
+  return {
+    minimum: settings.minimum,
+    goal: settings.goal,
+    presets: settings.presets.split(",").map(Number).join(","),
+    weekStart: settings.weekStart,
+  };
 }
 
 export async function saveSubject(subject: Subject): Promise<void> {
@@ -304,6 +333,8 @@ export async function deleteSubject(id: string): Promise<void> {
       db.timers,
       db.pendingOperations,
       db.recordRevisions,
+      db.recoveryCopies,
+      db.preferences,
     ],
     async () => {
       if ((await db.timers.get(1))?.value.subjectId === id)
@@ -316,6 +347,25 @@ export async function deleteSubject(id: string): Promise<void> {
         .equals(id)
         .toArray();
       const ids = sessions.map((session) => session.id);
+      if (db.accountId) {
+        const parent = await db.subjects.get(id);
+        await db.recoveryCopies.add({
+          id: crypto.randomUUID(),
+          reason: "conflict",
+          entity: "subject",
+          record_id: id,
+          snapshot: {
+            subjects: parent ? [parent] : [],
+            sessions,
+            slices: ids.length
+              ? await db.slices.where("session_id").anyOf(ids).toArray()
+              : [],
+            settings: (await db.preferences.get(1)) ?? { ...defaults },
+            running: null,
+          } satisfies Data,
+          created_at: new Date().toISOString(),
+        });
+      }
       if (ids.length) {
         await db.slices.where("session_id").anyOf(ids).delete();
         await db.sessions.bulkDelete(ids);
@@ -404,7 +454,11 @@ export async function saveSettings(settings: Settings): Promise<void> {
       const previous = await db.preferences.get(1);
       if (same(previous && { ...previous, id: undefined }, settings)) return;
       await db.preferences.put({ ...settings, id: 1 });
-      await enqueue(db, "settings", "settings", "upsert", settings);
+      if (
+        !previous ||
+        !same(sharedSettings(previous), sharedSettings(settings))
+      )
+        await enqueue(db, "settings", "settings", "upsert", settings);
     },
   );
 }
@@ -530,7 +584,12 @@ export async function restoreData(
         for (const old of previous.subjects)
           if (!newSubjects.has(old.id))
             await enqueue(db, "subject", old.id, "delete", null);
-        if (!same(previous.settings, data.settings))
+        if (
+          !same(
+            sharedSettings(previous.settings),
+            sharedSettings(data.settings),
+          )
+        )
           await enqueue(db, "settings", "settings", "upsert", data.settings);
       }
     },

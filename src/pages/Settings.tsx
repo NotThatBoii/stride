@@ -1,11 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, ShieldCheck, Check } from "lucide-react";
 import { useStride } from "../state";
-import { restoreData, saveSettings } from "../lib/storage";
+import { saveSettings } from "../lib/storage";
 import { parseBackup } from "../lib/validation";
 import type { Data } from "../models";
-import { Modal } from "../components/UI";
 import { AccountPanel } from "../components/AccountPanel";
+import SyncPanel from "../components/SyncPanel";
+import { HistoryImportDialog } from "../components/HistoryImport";
 import {
   appVersion,
   isDesktop,
@@ -16,10 +17,14 @@ import {
 export default function Settings() {
   const { data, act, busy } = useStride();
   const [form, setForm] = useState(data.settings);
+  const [dirty, setDirty] = useState(false);
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState<Data>();
   const fileInput = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
+  useEffect(() => {
+    if (!dirty) setForm(data.settings);
+  }, [data.settings, dirty]);
   async function save() {
     setError("");
     const presets = form.presets.split(",").map((x) => Number(x.trim()));
@@ -46,8 +51,12 @@ export default function Settings() {
         return;
       }
     }
-    if (await act(() => saveSettings({ ...form, presets: presets.join(",") })))
+    if (
+      await act(() => saveSettings({ ...form, presets: presets.join(",") }))
+    ) {
+      setDirty(false);
       setSaved(true);
+    }
   }
   async function exportData() {
     try {
@@ -91,13 +100,17 @@ export default function Settings() {
         </div>
       </div>
       <AccountPanel />
+      <SyncPanel />
       <form
         className="settings-form"
         onSubmit={(e) => {
           e.preventDefault();
           void save();
         }}
-        onChange={() => setSaved(false)}
+        onChange={() => {
+          setSaved(false);
+          setDirty(true);
+        }}
       >
         <section className="panel settings-section">
           <div>
@@ -203,7 +216,7 @@ export default function Settings() {
       <section className="panel data-settings">
         <ShieldCheck size={23} className="accent" />
         <div>
-          <h2>Local data</h2>
+          <h2>JSON backups</h2>
           <p>
             {isDesktop
               ? "Your study data is saved in this account’s local Windows app profile. A valid restored account session lets you use this cache offline."
@@ -213,8 +226,8 @@ export default function Settings() {
             Export includes subjects, sessions, daily allocations, preferences,
             and active timer state.{" "}
             {isDesktop
-              ? "To move your browser history here, export it from the web version and import that JSON file. Web and desktop have separate workspaces."
-              : "Use Export JSON to move your history into the Windows app. Keep a backup before clearing browser data."}
+              ? "Signed-in devices sync completed study history. Use JSON backups to preserve or add history independently."
+              : "Keep a JSON backup before clearing browser data. Imported history is reviewed and added to this account safely."}
           </p>
         </div>
         <input
@@ -249,34 +262,11 @@ export default function Settings() {
         </button>
       </section>
       {pending && (
-        <Modal
-          title="Restore this backup?"
+        <HistoryImportDialog
+          source={pending}
+          kind="backup"
           onClose={() => setPending(undefined)}
-        >
-          <p>
-            This replaces this workspace’s data with {pending.subjects.length}{" "}
-            subjects and {pending.sessions.length} sessions. Export your current
-            data first if you want to keep it. Any restored timer will be
-            paused.
-          </p>
-          <div className="dialog-actions">
-            <button className="secondary" onClick={() => setPending(undefined)}>
-              Cancel
-            </button>
-            <button
-              disabled={busy}
-              onClick={async () => {
-                if (await act(() => restoreData(pending))) {
-                  setForm(pending.settings);
-                  setPending(undefined);
-                  setSaved(true);
-                }
-              }}
-            >
-              Replace and restore
-            </button>
-          </div>
-        </Modal>
+        />
       )}
       <p className="hint">
         Stride {appVersion} · {isDesktop ? "Windows desktop" : "Web"} · MIT

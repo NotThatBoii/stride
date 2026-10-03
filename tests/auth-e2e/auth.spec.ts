@@ -3,6 +3,7 @@ import { defaults, type Data } from "../../src/models";
 import {
   authOrigin,
   expectNoStudySync,
+  expectAccountStudySync,
   mockAuth,
   seedAccount,
   signIn,
@@ -170,7 +171,7 @@ test("successful sign-in opens its account workspace and authenticated onboardin
       return storage.getActiveDatabase().name;
     }),
   ).toBe(`stride-account-${users["first@example.test"]}`);
-  expectNoStudySync(server.calls);
+  expectAccountStudySync(server.calls);
 });
 
 test("sign-up validation and email confirmation keep the user outside the app", async ({
@@ -213,7 +214,7 @@ test("sign-up validation and email confirmation keep the user outside the app", 
     page.getByRole("heading", { name: "What are you learning?" }),
   ).toBeVisible();
   expect(await legacySnapshot(page)).toEqual(legacy);
-  expectNoStudySync(server.calls);
+  expectAccountStudySync(server.calls);
 });
 
 test("a sign-up response containing an official session opens authenticated onboarding", async ({
@@ -230,7 +231,7 @@ test("a sign-up response containing an official session opens authenticated onbo
     page.getByRole("heading", { name: "What are you learning?" }),
   ).toBeVisible();
   await expect(page.locator(".auth-screen")).toHaveCount(0);
-  expectNoStudySync(server.calls);
+  expectAccountStudySync(server.calls);
 });
 
 test("invalid sign-in displays an error without opening study data", async ({
@@ -286,7 +287,7 @@ test("an existing valid session restores its onboarded account without showing l
       () => (window as unknown as { privateScreens: string[] }).privateScreens,
     ),
   ).toEqual([]);
-  expectNoStudySync(server.calls);
+  expectAccountStudySync(server.calls);
 });
 
 test("restored accounts that have not completed onboarding resume authenticated onboarding", async ({
@@ -383,7 +384,7 @@ test("official session refresh keeps bootstrap visible without flashing login or
           (window as unknown as { privateScreens: string[] }).privateScreens,
       ),
     ).toEqual([]);
-    expectNoStudySync(server.calls);
+    expectAccountStudySync(server.calls);
   } finally {
     server.releaseRefresh();
   }
@@ -441,7 +442,7 @@ test("sign-out immediately hides timers and study data while preserving all loca
     await expect(page.locator("body")).toContainText("Account private history");
     await expect(page.locator(".floating-timer")).toBeVisible();
     expect(await legacySnapshot(page)).toEqual(legacy);
-    expectNoStudySync(server.calls);
+    expectAccountStudySync(server.calls);
   } finally {
     server.releaseLogout();
   }
@@ -472,7 +473,7 @@ test("failed remote logout stays signed out after reload and preserves account d
   expect(await legacySnapshot(page)).toEqual(legacy);
   await signIn(page);
   await expect(page.locator("body")).toContainText("Offline account history");
-  expectNoStudySync(server.calls);
+  expectAccountStudySync(server.calls);
 });
 
 test("a newly signed-in user can sign out directly from onboarding", async ({

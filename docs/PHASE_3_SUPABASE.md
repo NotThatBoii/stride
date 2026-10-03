@@ -1,5 +1,7 @@
 # Phase 3 Supabase database and sync API
 
+> Historical backend report. [Phase 5](PHASE_5_SYNC.md) now connects the client to these same RPCs and records current client and hosted verification. The deployed Phase 3 SQL, RLS, grants, and protocol remain unchanged; statements below about absent client synchronization or unperformed live account calls describe Phase 3 at completion.
+
 Phase 3 adds a versioned PostgreSQL migration and a server-side synchronization contract. It does **not** connect the Windows or web app to Supabase, authenticate users in the app, upload anonymous history, or apply the migration to the hosted project. The existing Dexie database remains the application's local source of truth.
 
 The hosted project is `fotgomkjwbahxmmovzmn` at `https://fotgomkjwbahxmmovzmn.supabase.co`. After isolated testing and an explicit user approval, the single Phase 3 migration was applied there on 2026-10-01. The application still does not authenticate users, upload local study history, or activate synchronization.
