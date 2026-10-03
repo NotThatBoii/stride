@@ -29,10 +29,7 @@ import Insights from "./pages/Insights";
 import Settings from "./pages/Settings";
 import SubjectEditor from "./components/SubjectEditor";
 import Onboarding from "./components/Onboarding";
-import {
-  AccountPanel,
-  AnonymousHistoryDecision,
-} from "./components/AccountPanel";
+import { AccountPanel } from "./components/AccountPanel";
 import { Modal } from "./components/UI";
 import { SessionList } from "./components/Sessions";
 type Page = "Home" | "Subjects" | "Focus" | "History" | "Insights" | "Settings";
@@ -193,14 +190,8 @@ export default function App() {
               >
                 <span className="profile-avatar">S</span>
                 <span>
-                  {auth.status === "signed_in"
-                    ? (auth.user?.email ?? "Account workspace")
-                    : "Personal Workspace"}
-                  <small>
-                    {auth.status === "signed_in"
-                      ? "Local account workspace · Sync off"
-                      : "Local · Free forever"}
-                  </small>
+                  {auth.user?.email ?? "Account workspace"}
+                  <small>Local account workspace · Sync off</small>
                 </span>
               </button>
             </div>
@@ -225,9 +216,7 @@ export default function App() {
               <span className="topbar-note">
                 {timer
                   ? "● Focus session in progress"
-                  : auth.status === "signed_in"
-                    ? "Local account workspace · Sync off"
-                    : "Local workspace"}
+                  : "Local account workspace · Sync off"}
               </span>
             </header>
             <div className="page-content" key={subject ?? page}>
@@ -282,7 +271,6 @@ export default function App() {
           )}
         </div>
       )}
-      <AnonymousHistoryDecision />
       {accountOpen && (
         <Modal title="Account" onClose={() => setAccountOpen(false)}>
           <AccountPanel />

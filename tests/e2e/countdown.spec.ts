@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { openAccount } from "../auth-mock";
 test("countdown completes once and time edits recalculate streaks", async ({
   page,
 }) => {
   await page.clock.install({ time: new Date("2026-09-21T12:00:00") });
-  await page.goto("/");
-  await page.getByRole("button", { name: "Find your stride" }).click();
+  await openAccount(page);
   await page
     .getByRole("textbox", { name: "Subject name", exact: true })
     .fill("Circuits");

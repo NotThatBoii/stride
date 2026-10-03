@@ -4,7 +4,7 @@ import { useStride } from "../state";
 import { saveSettings, saveSubject } from "../lib/storage";
 export default function Onboarding({ onAccount }: { onAccount: () => void }) {
   const { data, act, busy } = useStride();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [minimum, setMinimum] = useState(20);
   return (
@@ -18,29 +18,11 @@ export default function Onboarding({ onAccount }: { onAccount: () => void }) {
       </div>
       <div className="onboarding-content">
         <div className="step-dots">
-          {[0, 1, 2].map((i) => (
+          {[1, 2].map((i) => (
             <i className={i <= step ? "selected" : ""} key={i} />
           ))}
         </div>
-        {step === 0 ? (
-          <>
-            <span className="eyebrow">LOCAL-FIRST STUDY TRACKING</span>
-            <h1>
-              Welcome to Stride.
-              <br />
-              Your study workspace.
-            </h1>
-            <p>
-              Turn your study sessions into a picture of progress.
-              <br />
-              One subject, one session, one square at a time.
-            </p>
-            <button className="large" onClick={() => setStep(1)}>
-              Find your stride <ArrowRight size={17} />
-            </button>
-            <small>Local by default. No account needed.</small>
-          </>
-        ) : step === 1 ? (
+        {step === 1 ? (
           <>
             <span className="eyebrow">01 / YOUR SUBJECTS</span>
             <h1>What are you learning?</h1>
@@ -91,9 +73,6 @@ export default function Onboarding({ onAccount }: { onAccount: () => void }) {
             </div>
             <button className="large" onClick={() => setStep(2)}>
               Continue <ArrowRight size={17} />
-            </button>
-            <button className="subtle" onClick={() => setStep(0)}>
-              Back
             </button>
           </>
         ) : (

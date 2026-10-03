@@ -42,12 +42,12 @@ export function createOptionalSupabaseClient(
       },
     });
   } catch {
-    // Invalid optional configuration must never block local anonymous use.
+    // Invalid configuration leaves the entry gate closed with an error state.
     return null;
   }
 }
 
-// Cloud access is optional. The original anonymous workspace needs no client.
+// A missing client is a configuration error at the authentication gate.
 export const supabase: SupabaseClient | null = createOptionalSupabaseClient(
   env?.VITE_SUPABASE_URL,
   env?.VITE_SUPABASE_PUBLISHABLE_KEY,

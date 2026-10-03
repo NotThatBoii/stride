@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { openAccount } from "../auth-mock";
 test("onboarding, subject CRUD, recoverable timer, history, heatmap, and settings", async ({
   page,
-}) => {
+}, testInfo) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/");
-  await page.getByRole("button", { name: "Find your stride" }).click();
+  await openAccount(page);
   await page
     .getByRole("textbox", { name: "Subject name", exact: true })
     .fill("Differential Equations");
@@ -26,7 +26,7 @@ test("onboarding, subject CRUD, recoverable timer, history, heatmap, and setting
     page.getByText("0 active days this year", { exact: false }),
   ).toBeVisible();
   await page.screenshot({
-    path: "docs/screenshots/home-empty.png",
+    path: testInfo.outputPath("home-empty.png"),
     fullPage: true,
   });
   await page
@@ -128,7 +128,7 @@ test("onboarding, subject CRUD, recoverable timer, history, heatmap, and setting
   await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 800, height: 768 });
   await page.screenshot({
-    path: "docs/screenshots/narrow-empty.png",
+    path: testInfo.outputPath("narrow-empty.png"),
     fullPage: true,
   });
   expect(errors).toEqual([]);

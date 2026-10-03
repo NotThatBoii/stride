@@ -5,9 +5,13 @@ Windows 10/11 x64 and Microsoft Edge WebView2 Runtime are required. Use the setu
 
 This is a portable executable, not a portable data profile: study data stays in your Windows user profile, and is shared with the installed version of Stride.
 
-To transfer history from the web version or another PC: Settings > Export JSON, then Settings > Import JSON on the destination. Import replaces the destination workspace after confirmation. Export a backup before upgrading or restoring.
+A Supabase email/password account is required to open a study workspace. Sign in or create an account on the entry screen; if email confirmation is required, confirm the email and then sign in. A restored unexpired session can open the account's local cache offline through the official Supabase client. Signing in requires a connection. A signed-out device or a session that cannot refresh stays at authentication. Missing build configuration displays a configuration error.
 
-The application is unsigned. No account is required. Notifications require Stride to remain open.
+Each account has its own local study database on this device. Signing in on another PC does not recover your history: cloud synchronization is not implemented. To transfer an authenticated workspace's history: Settings > Export JSON, then sign in and use Settings > Import JSON on the destination. Import replaces that account's local workspace after confirmation. Export a backup before upgrading or restoring.
+
+Signing out immediately hides the workspace and preserves all local data, including account caches and timer recovery. Pause a running timer before signing out if you do not want it to continue counting. Earlier anonymous data remains stored internally but is not exposed or automatically imported; explicit legacy import/recovery is deferred to Phase 5.
+
+The application is unsigned. Notifications require Stride to remain open.
 
 Updates and installer: https://github.com/NotThatBoii/stride/releases/latest
 Source and MIT license: https://github.com/NotThatBoii/stride

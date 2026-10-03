@@ -1,5 +1,11 @@
 import "fake-indexeddb/auto";
-import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
+import {
+  AuthApiError,
+  AuthRetryableFetchError,
+  type AuthChangeEvent,
+  type Session,
+  type User,
+} from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   database,
@@ -105,12 +111,12 @@ afterEach(async () => {
   managers.forEach((instance) => instance.stop());
   managers.length = 0;
   selectWorkspace(null);
-  await database.delete();
   vi.useRealTimers();
+  await database.delete();
 });
 
-describe("optional Supabase configuration", () => {
-  it("keeps local anonymous use available with missing, malformed, wrong-project, or secret configuration", () => {
+describe("required Supabase configuration", () => {
+  it("reports unavailable authentication with missing, malformed, wrong-project, or secret configuration", () => {
     expect(createOptionalSupabaseClient()).toBeNull();
     expect(
       createOptionalSupabaseClient("not a URL", "sb_publishable_test"),
@@ -129,11 +135,103 @@ describe("optional Supabase configuration", () => {
     ).toBeNull();
     const state = manager(null);
     expect(state.getSnapshot().status).toBe("disabled");
+    expect(state.getSnapshot().error).toBe(
+      "Authentication is unavailable in this build because Supabase is not configured. Your local data is preserved.",
+    );
+    expect(getActiveWorkspace().accountId).toBeNull();
+  });
+
+  it("rejects account requests when authentication is not configured", async () => {
+    const state = manager(null);
+    await expect(
+      state.signIn("a@example.test", "test-password"),
+    ).rejects.toThrow("Authentication is unavailable in this build");
+    await expect(
+      state.signUp("a@example.test", "test-password"),
+    ).rejects.toThrow("Authentication is unavailable in this build");
+    expect(state.getSnapshot()).toMatchObject({
+      status: "disabled",
+      user: null,
+    });
     expect(getActiveWorkspace().accountId).toBeNull();
   });
 });
 
 describe("auth and local workspace selection", () => {
+  it("hides the previous account during bootstrap and selects the restored workspace before publishing its identity", async () => {
+    selectWorkspace(accountB);
+    const fake = fakeAuth();
+    let finishRestore!: (result: {
+      data: { session: Session | null };
+      error: Error | null;
+    }) => void;
+    fake.auth.getSession = vi.fn(
+      () =>
+        new Promise<{
+          data: { session: Session | null };
+          error: Error | null;
+        }>((resolve) => (finishRestore = resolve)),
+    );
+    fake.auth.onAuthStateChange = vi.fn(() => ({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    }));
+    const state = new AuthSessionManager(fake.gateway);
+    managers.push(state);
+    const observed: { status: string; accountId: string | null }[] = [];
+    state.subscribe(() =>
+      observed.push({
+        status: state.getSnapshot().status,
+        accountId: getActiveWorkspace().accountId,
+      }),
+    );
+    state.start();
+    expect(state.getSnapshot()).toMatchObject({
+      status: "restoring",
+      user: null,
+    });
+    expect(getActiveWorkspace().accountId).toBeNull();
+
+    finishRestore({ data: { session: session(accountA) }, error: null });
+    await Promise.resolve();
+    expect(observed).toEqual([
+      { status: "restoring", accountId: null },
+      { status: "signed_in", accountId: accountA },
+    ]);
+  });
+
+  it("fails a stalled bootstrap closed and ignores its late session result", async () => {
+    vi.useFakeTimers();
+    const fake = fakeAuth();
+    let finishRestore!: (result: {
+      data: { session: Session | null };
+      error: Error | null;
+    }) => void;
+    fake.auth.getSession = vi.fn(
+      () =>
+        new Promise<{
+          data: { session: Session | null };
+          error: Error | null;
+        }>((resolve) => (finishRestore = resolve)),
+    );
+    fake.auth.onAuthStateChange = vi.fn(() => ({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    }));
+    const state = manager(fake.gateway);
+    expect(state.getSnapshot().status).toBe("restoring");
+    await vi.advanceTimersByTimeAsync(8_000);
+    expect(state.getSnapshot()).toMatchObject({
+      status: "signed_out",
+      user: null,
+      error:
+        "Unable to restore your account session. Check your connection, then sign in again. Your local data is preserved.",
+    });
+
+    finishRestore({ data: { session: session(accountA) }, error: null });
+    await Promise.resolve();
+    expect(state.getSnapshot().status).toBe("signed_out");
+    expect(getActiveWorkspace().accountId).toBeNull();
+  });
+
   it("restores an account before exposing its state and handles token refresh without switching workspaces", async () => {
     const fake = fakeAuth(session(accountA));
     const state = manager(fake.gateway);
@@ -168,7 +266,7 @@ describe("auth and local workspace selection", () => {
     expect(getActiveWorkspace().accountId).toBeNull();
   });
 
-  it("signs in, signs out to anonymous immediately, then switches to a different account", async () => {
+  it("signs in, clears the account immediately on sign-out, then switches to a different account", async () => {
     const fake = fakeAuth();
     const state = manager(fake.gateway);
     await Promise.resolve();
@@ -224,7 +322,7 @@ describe("auth and local workspace selection", () => {
     await accountDatabase.delete();
   });
 
-  it("keeps the anonymous workspace after invalid credentials or a sign-out network error", async () => {
+  it("keeps authentication signed out after invalid credentials or a sign-out network error", async () => {
     const fake = fakeAuth();
     const state = manager(fake.gateway);
     await Promise.resolve();
@@ -255,6 +353,91 @@ describe("auth and local workspace selection", () => {
     expect(getActiveWorkspace().accountId).toBeNull();
   });
 
+  it.each([
+    new TypeError("Failed to fetch"),
+    new AuthRetryableFetchError("Service temporarily unavailable", 503),
+  ])(
+    "gives a connection retry message for sign-in and sign-up transport failures: %s",
+    async (failure) => {
+      const fake = fakeAuth();
+      const state = manager(fake.gateway);
+      await Promise.resolve();
+      fake.auth.signInWithPassword = vi.fn(async () => ({
+        data: { user: null, session: null },
+        error: failure,
+      }));
+      fake.auth.signUp = vi.fn(async () => ({
+        data: { user: null, session: null },
+        error: failure,
+      }));
+      const message =
+        "Unable to connect to your account. Check your connection and try again.";
+      await expect(
+        state.signIn("a@example.test", "test-password"),
+      ).rejects.toThrow(message);
+      expect(state.getSnapshot()).toMatchObject({
+        status: "signed_out",
+        user: null,
+        error: message,
+      });
+      await expect(
+        state.signUp("a@example.test", "test-password"),
+      ).rejects.toThrow(message);
+      expect(state.getSnapshot()).toMatchObject({
+        status: "signed_out",
+        user: null,
+        error: message,
+      });
+      expect(getActiveWorkspace().accountId).toBeNull();
+    },
+  );
+
+  it("keeps a failed transport logout signed out while showing a retry message", async () => {
+    const fake = fakeAuth(session(accountA));
+    const state = manager(fake.gateway);
+    await Promise.resolve();
+    fake.auth.signOut = vi.fn(async () => ({
+      error: new AuthRetryableFetchError("Failed to fetch", 0),
+    }));
+    const pending = state.signOut();
+    expect(state.getSnapshot().status).toBe("signed_out");
+    expect(getActiveWorkspace().accountId).toBeNull();
+    await expect(pending).rejects.toThrow(
+      "Check your connection and try again.",
+    );
+    fake.emit("TOKEN_REFRESHED", session(accountA));
+    expect(state.getSnapshot()).toMatchObject({
+      status: "signed_out",
+      user: null,
+      error:
+        "Unable to connect to your account. Check your connection and try again.",
+    });
+    expect(getActiveWorkspace().accountId).toBeNull();
+  });
+
+  it("preserves the official email-confirmation error rather than reporting it as a network failure", async () => {
+    const fake = fakeAuth();
+    const state = manager(fake.gateway);
+    await Promise.resolve();
+    fake.auth.signInWithPassword = vi.fn(async () => ({
+      data: { user: null, session: null },
+      error: new AuthApiError(
+        "Email not confirmed",
+        400,
+        "email_not_confirmed",
+      ),
+    }));
+    await expect(
+      state.signIn("a@example.test", "test-password"),
+    ).rejects.toThrow("Email not confirmed");
+    expect(state.getSnapshot()).toMatchObject({
+      status: "signed_out",
+      user: null,
+      error: "Email not confirmed",
+    });
+    expect(getActiveWorkspace().accountId).toBeNull();
+  });
+
   it("ignores a stale initial session after a newer sign-in event", async () => {
     const fake = fakeAuth(session(accountA));
     fake.auth.getSession = vi.fn(
@@ -275,7 +458,7 @@ describe("auth and local workspace selection", () => {
     expect(getActiveWorkspace().accountId).toBe(accountB);
   });
 
-  it("opens anonymous data when session restoration fails and ignores a stale sign-in result after unmount", async () => {
+  it("fails session restoration closed and ignores a stale sign-in result after unmount", async () => {
     const fake = fakeAuth();
     fake.auth.onAuthStateChange = vi.fn(() => ({
       data: { subscription: { unsubscribe: vi.fn() } },
@@ -289,7 +472,8 @@ describe("auth and local workspace selection", () => {
     expect(state.getSnapshot()).toMatchObject({
       status: "signed_out",
       user: null,
-      error: "Cloud sign-in is unavailable. Your local data is safe.",
+      error:
+        "Unable to restore your account session. Check your connection, then sign in again. Your local data is preserved.",
     });
     expect(getActiveWorkspace().accountId).toBeNull();
 
@@ -315,7 +499,7 @@ describe("auth and local workspace selection", () => {
     expect(getActiveWorkspace().accountId).toBeNull();
   });
 
-  it("keeps a failed sign-out anonymous after reload even if a late refresh restores the saved session", async () => {
+  it("keeps a failed sign-out signed out after reload even if a late refresh restores the saved session", async () => {
     const storage = memoryStorage();
     storage.setItem(credentialKey, "opaque-test-session");
     const fake = fakeAuth(session(accountA));

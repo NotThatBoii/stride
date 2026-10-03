@@ -1,4 +1,9 @@
-import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
+import {
+  isAuthRetryableFetchError,
+  type AuthChangeEvent,
+  type Session,
+  type User,
+} from "@supabase/supabase-js";
 import { selectWorkspace } from "../lib/local-database";
 
 export type AuthStatus = "disabled" | "restoring" | "signed_out" | "signed_in";
@@ -37,7 +42,9 @@ export interface AuthGateway {
 
 const restorationTimeoutMs = 8_000;
 const unavailableMessage =
-  "Cloud sign-in is unavailable. Your local data is safe.";
+  "Unable to restore your account session. Check your connection, then sign in again. Your local data is preserved.";
+const configurationMessage =
+  "Authentication is unavailable in this build because Supabase is not configured. Your local data is preserved.";
 
 interface MarkerStorage {
   getItem(key: string): string | null;
@@ -54,6 +61,14 @@ function browserStorage(): MarkerStorage | null {
 }
 
 function messageFrom(error: unknown): string {
+  if (
+    isAuthRetryableFetchError(error) ||
+    (error instanceof Error &&
+      /^(failed to fetch|fetch failed|networkerror when attempting to fetch resource\.?|load failed)$/i.test(
+        error.message,
+      ))
+  )
+    return "Unable to connect to your account. Check your connection and try again.";
   return error instanceof Error && error.message
     ? error.message
     : "Authentication failed. Please try again.";
@@ -88,7 +103,7 @@ export class AuthSessionManager {
     private readonly storage: MarkerStorage | null = browserStorage(),
   ) {
     this.snapshot = {
-      // Gate children until start() has explicitly selected anonymous data.
+      // Keep account UI hidden until the official client restores a session.
       status: "restoring",
       user: null,
       error: null,
@@ -108,7 +123,7 @@ export class AuthSessionManager {
           : "restoring"
         : "disabled",
       user: null,
-      error: null,
+      error: this.client ? null : configurationMessage,
     });
     if (!this.client) return;
 
@@ -239,7 +254,7 @@ export class AuthSessionManager {
             : previous),
           error: messageFrom(error),
         });
-      throw error;
+      throw new Error(messageFrom(error));
     } finally {
       if (this.isCurrentOperation(lifecycle, operation)) this.operation = false;
     }
@@ -283,7 +298,7 @@ export class AuthSessionManager {
           user: null,
           error: messageFrom(error),
         });
-      throw error;
+      throw new Error(messageFrom(error));
     } finally {
       if (this.isCurrentOperation(lifecycle, operation)) this.operation = false;
     }
@@ -308,7 +323,7 @@ export class AuthSessionManager {
           user: null,
           error: messageFrom(error),
         });
-      throw error;
+      throw new Error(messageFrom(error));
     } finally {
       // Keep the credential available while auth-js attempts server logout.
       // Purge afterward, including when auth-js returns early on a refresh
@@ -329,7 +344,7 @@ export class AuthSessionManager {
 
   private requireClient(): AuthGateway {
     if (this.client) return this.client;
-    const error = new Error("Cloud sign-in is not configured on this device.");
+    const error = new Error(configurationMessage);
     this.publish({ status: "disabled", user: null, error: error.message });
     throw error;
   }

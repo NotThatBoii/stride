@@ -1,15 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { fixture } from "./fixture";
+import { openAccount, seedAccount } from "../auth-mock";
 test("major screens fit desktop and narrow viewports without console errors", async ({
   page,
-}) => {
+}, testInfo) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.addInitScript((data) => {
-    if (!localStorage.getItem("stride-browser-preview-v1"))
-      localStorage.setItem("stride-browser-preview-v1", JSON.stringify(data));
-  }, fixture());
-  await page.goto("/");
+  await openAccount(page);
+  await seedAccount(page, fixture());
   await expect(page.locator(".subject-card")).toHaveCount(4);
   for (const width of [1366, 1440, 1672, 1920, 800]) {
     await page.setViewportSize({
@@ -39,10 +37,12 @@ test("major screens fit desktop and narrow viewports without console errors", as
           ),
       );
       if (width === 1672 && screen === "Home")
-        await page.screenshot({ path: "docs/screenshots/home-reference.png" });
+        await page.screenshot({
+          path: testInfo.outputPath("home-reference.png"),
+        });
       if (width === 1440)
         await page.screenshot({
-          path: `docs/screenshots/${screen.toLowerCase()}.png`,
+          path: testInfo.outputPath(`${screen.toLowerCase()}.png`),
           fullPage: false,
         });
     }
@@ -51,7 +51,7 @@ test("major screens fit desktop and narrow viewports without console errors", as
   await page.getByRole("button", { name: "Subjects", exact: true }).click();
   await page.locator(".subject-card").first().click();
   await page.screenshot({
-    path: "docs/screenshots/subject.png",
+    path: testInfo.outputPath("subject.png"),
     fullPage: false,
   });
   await page
@@ -62,7 +62,7 @@ test("major screens fit desktop and narrow viewports without console errors", as
     .click();
   await expect(page.locator(".sidebar")).toBeHidden();
   await page.screenshot({
-    path: "docs/screenshots/focus-active.png",
+    path: testInfo.outputPath("focus-active.png"),
     fullPage: false,
   });
   await page
@@ -77,7 +77,7 @@ test("major screens fit desktop and narrow viewports without console errors", as
   await page.getByRole("button", { name: "Home", exact: true }).click();
   await page.setViewportSize({ width: 800, height: 768 });
   await page.screenshot({
-    path: "docs/screenshots/narrow-light.png",
+    path: testInfo.outputPath("narrow-light.png"),
     fullPage: false,
   });
   expect(errors).toEqual([]);

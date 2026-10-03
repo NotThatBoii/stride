@@ -1,10 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 import { defaults, type Data } from "../../src/models";
-
-const users = {
-  "first@example.test": "11111111-1111-4111-8111-111111111111",
-  "second@example.test": "22222222-2222-4222-8222-222222222222",
-} as const;
+import {
+  authOrigin,
+  expectNoStudySync,
+  mockAuth,
+  seedAccount,
+  signIn,
+  users,
+} from "../auth-mock";
 
 function studyData(name: string): Data {
   return {
@@ -26,282 +29,463 @@ function studyData(name: string): Data {
   };
 }
 
-function token(userId: string): string {
-  const encoded = (value: object) =>
-    Buffer.from(JSON.stringify(value)).toString("base64url");
-  return `${encoded({ alg: "HS256", typ: "JWT" })}.${encoded({ sub: userId, role: "authenticated", aud: "authenticated", exp: Math.floor(Date.now() / 1000) + 3600 })}.test`;
-}
-
-async function mockAuth(page: Page, failLogout = false) {
-  const calls: string[] = [];
-  await page.route(
-    "https://fotgomkjwbahxmmovzmn.supabase.co/**",
-    async (route) => {
-      const request = route.request();
-      const url = new URL(request.url());
-      calls.push(`${request.method()} ${url.pathname}`);
-      const respond = (status: number, body: unknown) =>
-        route.fulfill({
-          status,
-          contentType: "application/json",
-          headers: {
-            "access-control-allow-origin": "*",
-            "access-control-allow-methods": "GET, POST, OPTIONS",
-            "access-control-allow-headers": "*",
-          },
-          body: JSON.stringify(body),
-        });
-      if (request.method() === "OPTIONS") return respond(200, {});
-      if (
-        url.pathname === "/auth/v1/token" &&
-        url.searchParams.get("grant_type") === "password"
-      ) {
-        const { email, password } = request.postDataJSON() as {
-          email: string;
-          password: string;
-        };
-        const id = users[email as keyof typeof users];
-        if (!id || password !== "password123")
-          return respond(400, {
-            code: "invalid_credentials",
-            message: "Invalid login credentials",
-          });
-        const user = {
-          id,
-          email,
-          aud: "authenticated",
-          role: "authenticated",
-          created_at: "2026-09-20T10:00:00.000Z",
-        };
-        return respond(200, {
-          access_token: token(id),
-          token_type: "bearer",
-          expires_in: 3600,
-          refresh_token: `refresh-${id}`,
-          user,
-        });
-      }
-      if (url.pathname === "/auth/v1/signup") {
-        const { email } = request.postDataJSON() as { email: string };
-        return respond(200, {
-          user: {
-            id: crypto.randomUUID(),
-            email,
-            aud: "authenticated",
-            created_at: "2026-09-20T10:00:00.000Z",
-            identities: [{}],
-          },
-          session: null,
-        });
-      }
-      if (url.pathname === "/auth/v1/logout") {
-        calls.push(
-          `logout-authorized:${Boolean(request.headers().authorization?.startsWith("Bearer "))}`,
-        );
-        return failLogout
-          ? respond(503, { message: "Network unavailable" })
-          : respond(200, {});
-      }
-      if (url.pathname === "/auth/v1/user") {
-        const bearer =
-          request.headers().authorization?.replace(/^Bearer /i, "") ?? "";
-        let id: string | undefined;
-        try {
-          id = JSON.parse(
-            Buffer.from(bearer.split(".")[1], "base64url").toString(),
-          ).sub;
-        } catch {
-          /* An invalid bearer remains unauthorized. */
-        }
-        if (id)
-          return respond(200, {
-            user: {
-              id,
-              email: Object.keys(users).find(
-                (email) => users[email as keyof typeof users] === id,
-              ),
-              aud: "authenticated",
-            },
-          });
-        return respond(401, { message: "Unauthorized" });
-      }
-      return respond(404, { message: "Unexpected request" });
-    },
-  );
-  return calls;
-}
-
-async function seed(page: Page, name: string) {
-  await page.evaluate(async (data) => {
-    const storage = await import("/src/lib/storage.ts");
-    await storage.restoreData(data);
-  }, studyData(name));
-  await expect(page.locator("body")).toContainText(name);
-}
-
-async function anonymousSubjectNames(page: Page): Promise<string[]> {
+async function legacySnapshot(page: Page) {
   return page.evaluate(async () => {
     const storage = await import("/src/lib/storage.ts");
-    const data = await storage.readData(storage.database);
-    return data.subjects.map((subject) => subject.name);
+    return {
+      data: await storage.readData(storage.database),
+      recovery: await storage.database.recoveryCopies.toArray(),
+      metadata: await storage.database.meta.toArray(),
+      raw: localStorage.getItem("stride-browser-preview-v1"),
+    };
   });
 }
 
-async function signIn(
-  page: Page,
-  email: keyof typeof users,
-  password = "password123",
-) {
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
-  await page.locator(".account-form input[type=email]").fill(email);
-  await page.locator(".account-form input[type=password]").fill(password);
-  await page.locator(".account-form button").click();
-  await expect
-    .poll(() =>
-      page.evaluate(async () => {
-        const storage = await import("/src/lib/storage.ts");
-        return storage.getActiveWorkspace().accountId;
-      }),
-    )
-    .toBe(users[email]);
-  await expect(page.locator(".boot")).toHaveCount(0);
-}
-
-test("account switching keeps three local histories isolated across reload and sign-out", async ({
-  page,
-}) => {
-  const calls = await mockAuth(page);
-  await page.goto("/");
-  await seed(page, "Anonymous history");
-  await page.evaluate(async () => {
+async function seedLegacy(page: Page) {
+  const data = studyData("Legacy private history");
+  data.running = {
+    id: "legacy-running",
+    subjectId: "subject-Legacy private history",
+    startedAt: "2026-09-20T10:00:00.000Z",
+    title: "Legacy private focus",
+    mode: "stopwatch",
+    target: 1500,
+    segments: [],
+    runningSince: Date.now(),
+    notified: false,
+  };
+  await page.evaluate(async (value) => {
     const storage = await import("/src/lib/storage.ts");
-    await storage.saveRunning({
-      id: "anonymous-running",
-      subjectId: "subject-Anonymous history",
-      startedAt: new Date().toISOString(),
-      title: "Anonymous focus",
-      mode: "stopwatch",
-      target: 1500,
-      segments: [],
-      runningSince: Date.now(),
-      notified: false,
+    localStorage.setItem("stride-browser-preview-v1", JSON.stringify(value));
+    await storage.initialize(storage.database);
+    await storage.database.recoveryCopies.put({
+      id: "legacy-recovery",
+      reason: "json_restore",
+      entity: null,
+      record_id: null,
+      snapshot: value,
+      created_at: "2026-09-20T10:00:00.000Z",
     });
+  }, data);
+  return legacySnapshot(page);
+}
+
+async function watchPrivateScreens(page: Page) {
+  await page.addInitScript(() => {
+    const exposed: string[] = [];
+    (window as unknown as { privateScreens: string[] }).privateScreens =
+      exposed;
+    new MutationObserver(() => {
+      if (document.querySelector(".auth-screen")) exposed.push("login");
+      if (document.body?.innerText.includes("Legacy private history"))
+        exposed.push("legacy");
+    }).observe(document, { childList: true, subtree: true });
   });
-  await expect(page.locator(".floating-timer")).toBeVisible();
+}
 
-  await signIn(page, "first@example.test");
-  await expect(
-    page.getByRole("button", { name: "Anonymous history", exact: true }),
-  ).toHaveCount(0);
-  await expect(page.locator(".floating-timer")).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Find your stride" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Anonymous history on this device" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Keep separate" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Anonymous history on this device" }),
-  ).toHaveCount(0);
-  await page.reload();
-  await expect(
-    page.getByRole("heading", { name: "Anonymous history on this device" }),
-  ).toHaveCount(0);
-  await seed(page, "First account history");
+async function submitCredentials(page: Page, password = "password123") {
+  await page.getByLabel("Email", { exact: true }).fill("first@example.test");
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.locator(".account-form button").click();
+}
 
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
-  await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page.locator("body")).toContainText("Anonymous history");
-  await expect(page.locator(".floating-timer")).toBeVisible();
-  await expect(page.locator("body")).not.toContainText("First account history");
-
-  await signIn(page, "second@example.test");
-  await expect(page.locator("body")).not.toContainText("First account history");
-  await expect(page.locator(".floating-timer")).toHaveCount(0);
+test("logged-out entry exposes only authentication and leaves raw legacy data untouched", async ({
+  page,
+}, testInfo) => {
+  const server = await mockAuth(page);
+  const raw = JSON.stringify(studyData("Legacy private history"));
+  await page.addInitScript((value) => {
+    localStorage.setItem("stride-browser-preview-v1", value);
+  }, raw);
+  await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Anonymous history on this device" }),
+    page.getByRole("heading", { name: "Welcome to Stride." }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Prepare import" }).click();
-  await expect(page.locator("body")).toContainText(
-    "Nothing has been copied or uploaded",
+  await expect(page.locator(".auth-screen")).toBeVisible();
+  await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
+  await expect(page.locator(".app, .onboarding, .floating-timer")).toHaveCount(
+    0,
   );
-  await page.getByRole("button", { name: "Got it" }).click();
-  await seed(page, "Second account history");
-  await page.reload();
-  await expect(page.locator("body")).toContainText("Second account history");
-  await expect(page.locator("body")).not.toContainText("First account history");
   await expect(
-    page.getByRole("heading", { name: "Anonymous history on this device" }),
+    page.getByRole("button", {
+      name: /continue as guest|continue locally|skip account|find your stride/i,
+    }),
   ).toHaveCount(0);
-
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
-  await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page.locator("body")).toContainText("Anonymous history");
   await expect(page.locator("body")).not.toContainText(
-    "Second account history",
+    "Legacy private history",
   );
+  await page.keyboard.press("Control+k");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.goto("/#/Home");
+  await expect(page.locator(".auth-screen")).toBeVisible();
   expect(
-    calls.some((call) => call.includes("/rest/v1/") || call.includes("/rpc/")),
-  ).toBe(false);
+    await page.evaluate(() =>
+      localStorage.getItem("stride-browser-preview-v1"),
+    ),
+  ).toBe(raw);
+  expect(
+    await page.evaluate(async () =>
+      (await indexedDB.databases()).map((db) => db.name),
+    ),
+  ).not.toContain("stride");
+  await page.screenshot({
+    path: testInfo.outputPath("auth-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("auth-narrow.png"),
+    fullPage: true,
+  });
+  expectNoStudySync(server.calls);
 });
 
-test("sign-up confirmation and invalid password do not change anonymous data", async ({
+test("successful sign-in opens its account workspace and authenticated onboarding", async ({
   page,
 }) => {
-  const calls = await mockAuth(page);
+  const server = await mockAuth(page);
   await page.goto("/");
-  await seed(page, "Safe anonymous history");
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await signIn(page);
+  await expect(
+    page.getByRole("heading", { name: "What are you learning?" }),
+  ).toBeVisible();
   await page
-    .getByRole("button", { name: "Create account", exact: true })
-    .first()
+    .getByRole("textbox", { name: "Subject name", exact: true })
+    .fill("Account subject");
+  await page.getByRole("button", { name: "Add subject", exact: true }).click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Let’s begin" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Keep your stride." }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(async () => {
+      const storage = await import("/src/lib/storage.ts");
+      return storage.getActiveDatabase().name;
+    }),
+  ).toBe(`stride-account-${users["first@example.test"]}`);
+  expectNoStudySync(server.calls);
+});
+
+test("sign-up validation and email confirmation keep the user outside the app", async ({
+  page,
+}) => {
+  const server = await mockAuth(page);
+  await page.goto("/");
+  const legacy = await seedLegacy(page);
+  await page
+    .getByRole("group", { name: "Account action" })
+    .getByRole("button", { name: "Create account" })
     .click();
-  await page
-    .locator(".account-form input[type=email]")
-    .fill("new@example.test");
-  await page.locator(".account-form input[type=password]").fill("password123");
+  await page.getByLabel("Email", { exact: true }).fill("not-an-email");
+  await page.getByLabel("Password", { exact: true }).fill("password123");
+  await page.locator(".account-form button").click();
+  expect(server.calls.some((call) => call.includes("/signup"))).toBe(false);
+  expect(
+    await page
+      .getByLabel("Email", { exact: true })
+      .evaluate((input: HTMLInputElement) => input.validity.valid),
+  ).toBe(false);
+  await page.getByLabel("Email", { exact: true }).fill("new@example.test");
   await page.locator(".account-form button").click();
   await expect(page.getByRole("status")).toContainText("Check your email");
-  expect(await anonymousSubjectNames(page)).toContain("Safe anonymous history");
+  await expect(page.locator(".app, .onboarding")).toHaveCount(0);
+  expect(await legacySnapshot(page)).toEqual(legacy);
+  expect(
+    await page.evaluate(async () => {
+      const storage = await import("/src/lib/storage.ts");
+      return storage.getActiveWorkspace().accountId;
+    }),
+  ).toBeNull();
   await page
-    .getByRole("button", { name: "Sign in", exact: true })
-    .first()
+    .getByRole("group", { name: "Account action" })
+    .getByRole("button", { name: "Sign in" })
     .click();
+  await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
+  await signIn(page);
+  await expect(
+    page.getByRole("heading", { name: "What are you learning?" }),
+  ).toBeVisible();
+  expect(await legacySnapshot(page)).toEqual(legacy);
+  expectNoStudySync(server.calls);
+});
+
+test("a sign-up response containing an official session opens authenticated onboarding", async ({
+  page,
+}) => {
+  const server = await mockAuth(page, { signupSession: true });
+  await page.goto("/");
   await page
-    .locator(".account-form input[type=email]")
-    .fill("first@example.test");
-  await page
-    .locator(".account-form input[type=password]")
-    .fill("wrong-password");
-  await page.locator(".account-form button").click();
+    .getByRole("group", { name: "Account action" })
+    .getByRole("button", { name: "Create account" })
+    .click();
+  await submitCredentials(page);
+  await expect(
+    page.getByRole("heading", { name: "What are you learning?" }),
+  ).toBeVisible();
+  await expect(page.locator(".auth-screen")).toHaveCount(0);
+  expectNoStudySync(server.calls);
+});
+
+test("invalid sign-in displays an error without opening study data", async ({
+  page,
+}) => {
+  const server = await mockAuth(page);
+  await page.goto("/");
+  await submitCredentials(page, "wrong-password");
   await expect(page.getByRole("alert")).toContainText(
     "Invalid login credentials",
   );
-  expect(await anonymousSubjectNames(page)).toContain("Safe anonymous history");
-  expect(
-    calls.some((call) => call.includes("/rest/v1/") || call.includes("/rpc/")),
-  ).toBe(false);
+  await expect(page.locator(".auth-screen")).toBeVisible();
+  await expect(page.locator(".app, .onboarding")).toHaveCount(0);
+  await expect(page.locator(".account-form button")).toBeEnabled();
+  expectNoStudySync(server.calls);
 });
 
-test("failed remote logout still returns to anonymous data after reload", async ({
+test("offline sign-in failure stays behind the authentication gate", async ({
   page,
 }) => {
-  const calls = await mockAuth(page, true);
+  const server = await mockAuth(page, { failSignIn: true });
   await page.goto("/");
-  await seed(page, "Anonymous record");
-  await signIn(page, "first@example.test");
-  await seed(page, "Account record");
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
-  await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page.locator("body")).toContainText("Anonymous record");
-  await expect(page.locator("body")).not.toContainText("Account record");
+  await page.context().setOffline(true);
+  await submitCredentials(page);
   await expect(page.getByRole("alert")).toContainText(
-    "Account connection issue",
+    /fetch|network|connect|offline/i,
   );
-  expect(calls).toContain("POST /auth/v1/logout");
-  expect(calls).toContain("logout-authorized:true");
+  await expect(page.locator(".auth-screen")).toBeVisible();
+  await expect(page.locator(".app, .onboarding, .floating-timer")).toHaveCount(
+    0,
+  );
+  await expect(page.locator(".account-form button")).toBeEnabled();
+  expectNoStudySync(server.calls);
+});
+
+test("an existing valid session restores its onboarded account without showing login", async ({
+  page,
+}) => {
+  const server = await mockAuth(page);
+  await page.goto("/");
+  await seedLegacy(page);
+  await signIn(page);
+  await seedAccount(page, studyData("Restored account history"));
+  await watchPrivateScreens(page);
   await page.reload();
-  await expect(page.locator("body")).toContainText("Anonymous record");
-  await expect(page.locator("body")).not.toContainText("Account record");
+  await expect(
+    page.getByRole("heading", { name: "Keep your stride." }),
+  ).toBeVisible();
+  await expect(page.locator("body")).toContainText("Restored account history");
+  await expect(page.locator(".auth-screen, .onboarding")).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { privateScreens: string[] }).privateScreens,
+    ),
+  ).toEqual([]);
+  expectNoStudySync(server.calls);
+});
+
+test("restored accounts that have not completed onboarding resume authenticated onboarding", async ({
+  page,
+}) => {
+  await mockAuth(page);
+  await page.goto("/");
+  await signIn(page);
+  await watchPrivateScreens(page);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "What are you learning?" }),
+  ).toBeVisible();
+  await expect(page.locator(".auth-screen, .app")).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { privateScreens: string[] }).privateScreens,
+    ),
+  ).toEqual([]);
+});
+
+test("a valid saved session restores cached account data when Auth is unreachable", async ({
+  page,
+}) => {
+  await mockAuth(page);
+  await page.goto("/");
+  await signIn(page);
+  await seedAccount(page, studyData("Offline cached account history"));
+  await page.unroute(`${authOrigin}/**`);
+  const unavailableCalls: string[] = [];
+  await page.route(`${authOrigin}/**`, (route) => {
+    unavailableCalls.push(route.request().url());
+    return route.abort("internetdisconnected");
+  });
+  // Keep the local test bundle accessible while the external Auth service is
+  // unreachable. Authentication still follows auth-js's persisted-session path.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "onLine", { get: () => false });
+  });
+  await watchPrivateScreens(page);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Keep your stride." }),
+  ).toBeVisible();
+  await expect(page.locator("body")).toContainText(
+    "Offline cached account history",
+  );
+  await expect(page.locator(".auth-screen")).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { privateScreens: string[] }).privateScreens,
+    ),
+  ).toEqual([]);
+  expect(unavailableCalls).toEqual([]);
+});
+
+test("official session refresh keeps bootstrap visible without flashing login or legacy data", async ({
+  page,
+}) => {
+  const server = await mockAuth(page, {
+    passwordExpiresIn: 1,
+    holdRefresh: true,
+  });
+  try {
+    await page.goto("/");
+    await seedLegacy(page);
+    await signIn(page);
+    await seedAccount(page, studyData("Refreshed account history"));
+    await watchPrivateScreens(page);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect
+      .poll(() =>
+        server.calls.some((call) => call.includes("grant_type=refresh_token")),
+      )
+      .toBe(true);
+    await expect(page.locator(".boot")).toBeVisible();
+    await expect(page.locator(".auth-screen, .app, .onboarding")).toHaveCount(
+      0,
+    );
+    await expect(page.locator("body")).not.toContainText(
+      "Legacy private history",
+    );
+    await expect(page.locator("body")).not.toContainText(
+      "Refreshed account history",
+    );
+    server.releaseRefresh();
+    await expect(page.locator("body")).toContainText(
+      "Refreshed account history",
+    );
+    await expect(page.locator(".auth-screen")).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () =>
+          (window as unknown as { privateScreens: string[] }).privateScreens,
+      ),
+    ).toEqual([]);
+    expectNoStudySync(server.calls);
+  } finally {
+    server.releaseRefresh();
+  }
+});
+
+test("sign-out immediately hides timers and study data while preserving all local histories", async ({
+  page,
+}) => {
+  const server = await mockAuth(page, { holdLogout: true });
+  try {
+    await page.goto("/");
+    const legacy = await seedLegacy(page);
+    await signIn(page);
+    await seedAccount(page, studyData("Account private history"));
+    await page.evaluate(async () => {
+      const storage = await import("/src/lib/storage.ts");
+      await storage.saveRunning({
+        id: "account-running",
+        subjectId: "subject-Account private history",
+        startedAt: new Date().toISOString(),
+        title: "Account private focus",
+        mode: "stopwatch",
+        target: 1500,
+        segments: [],
+        runningSince: Date.now(),
+        notified: false,
+      });
+    });
+    await expect(page.locator(".floating-timer")).toBeVisible();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(page.locator(".auth-screen")).toBeVisible();
+    await expect(page.locator(".app, .floating-timer")).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText(
+      "Account private history",
+    );
+    await expect(page.locator("body")).not.toContainText(
+      "Legacy private history",
+    );
+    await expect
+      .poll(() => server.calls.includes("logout-authorized:true"))
+      .toBe(true);
+    expect(await legacySnapshot(page)).toEqual(legacy);
+    server.releaseLogout();
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          localStorage.getItem(
+            "stride-auth-v1-fotgomkjwbahxmmovzmn.supabase.co",
+          ),
+        ),
+      )
+      .toBeNull();
+    await signIn(page);
+    await expect(page.locator("body")).toContainText("Account private history");
+    await expect(page.locator(".floating-timer")).toBeVisible();
+    expect(await legacySnapshot(page)).toEqual(legacy);
+    expectNoStudySync(server.calls);
+  } finally {
+    server.releaseLogout();
+  }
+});
+
+test("failed remote logout stays signed out after reload and preserves account data", async ({
+  page,
+}) => {
+  const server = await mockAuth(page, { failLogout: true });
+  await page.goto("/");
+  const legacy = await seedLegacy(page);
+  await signIn(page);
+  await seedAccount(page, studyData("Offline account history"));
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(page.locator(".auth-screen")).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText(
+    "Check your connection and try again",
+  );
+  await page.reload();
+  await expect(page.locator(".auth-screen")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(
+    "Offline account history",
+  );
+  await expect(page.locator("body")).not.toContainText(
+    "Legacy private history",
+  );
+  expect(await legacySnapshot(page)).toEqual(legacy);
+  await signIn(page);
+  await expect(page.locator("body")).toContainText("Offline account history");
+  expectNoStudySync(server.calls);
+});
+
+test("a newly signed-in user can sign out directly from onboarding", async ({
+  page,
+}) => {
+  await mockAuth(page);
+  await page.goto("/");
+  await signIn(page);
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Account" })
+    .getByRole("button", { name: "Sign out", exact: true })
+    .click();
+  await expect(page.locator(".auth-screen")).toBeVisible();
+  await expect(page.locator(".onboarding, .app")).toHaveCount(0);
 });

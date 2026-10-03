@@ -206,7 +206,7 @@ export default function Settings() {
           <h2>Local data</h2>
           <p>
             {isDesktop
-              ? "Your study data is saved in Stride’s local Windows app profile. The app works without a server or internet connection."
+              ? "Your study data is saved in this account’s local Windows app profile. A valid restored account session lets you use this cache offline."
               : "Subjects, sessions, and settings are stored in this browser using IndexedDB."}
           </p>
           <p className="hint">

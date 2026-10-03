@@ -12,8 +12,8 @@ export default defineConfig({
     url: "http://127.0.0.1:1420",
     reuseExistingServer: false,
     env: {
-      VITE_SUPABASE_URL: "",
-      VITE_SUPABASE_PUBLISHABLE_KEY: "",
+      VITE_SUPABASE_URL: "https://fotgomkjwbahxmmovzmn.supabase.co",
+      VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test_only",
     },
   },
   workers: 1,

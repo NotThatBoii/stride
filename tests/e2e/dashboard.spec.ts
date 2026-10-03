@@ -1,15 +1,12 @@
 import { test, expect } from "@playwright/test";
 import { fixture } from "./fixture";
+import { openAccount, seedAccount } from "../auth-mock";
 
 test("dashboard shortcuts, command search, and collapsed navigation remain usable", async ({
   page,
 }) => {
-  await page.addInitScript(
-    (data) =>
-      localStorage.setItem("stride-browser-preview-v1", JSON.stringify(data)),
-    fixture(),
-  );
-  await page.goto("/");
+  await openAccount(page);
+  await seedAccount(page, fixture());
   await expect(
     page.getByRole("img", { name: "33% of daily study goal" }),
   ).toBeVisible();
