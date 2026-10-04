@@ -1,0 +1,180 @@
+{
+  "measuredAt": "2026-10-04T04:47:18.952Z",
+  "sessions": 1000,
+  "allocations": 1200,
+  "browser": "chromium",
+  "version": "154.0.4258.53",
+  "mode": "Production minified build on loopback; synthetic account IndexedDB; intercepted Auth and 503 cloud; service workers blocked; no hosted latency or packaged-native claim.",
+  "seed": {
+    "existingDatabaseOpenMs": 6.399999976158142,
+    "seedWriteMs": 73.20000004768372
+  },
+  "startup": {
+    "readyAt": 172.69999992847443,
+    "longTasks": [],
+    "databaseTransactions": [
+      {
+        "stores": [
+          "conflicts",
+          "meta",
+          "pendingOperations",
+          "preferences",
+          "recordRevisions",
+          "recoveryCopies",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncCursors",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 1
+      },
+      {
+        "stores": [
+          "meta",
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readwrite",
+        "durationMs": 0.7999999523162842
+      },
+      {
+        "stores": [
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 23.899999976158142
+      },
+      {
+        "stores": [
+          "pendingOperations"
+        ],
+        "mode": "readonly",
+        "durationMs": 3.600000023841858
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 3.3000000715255737
+      },
+      {
+        "stores": [
+          "conflicts"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.7999999523162842
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.7000000476837158
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 31.899999976158142
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.5999999046325684
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.3999999761581421
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.20000004768371582
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.20000004768371582
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 1
+      },
+      {
+        "stores": [
+          "conflicts",
+          "meta",
+          "pendingOperations",
+          "preferences",
+          "recordRevisions",
+          "recoveryCopies",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncCursors",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.5
+      },
+      {
+        "stores": [
+          "meta",
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readwrite",
+        "durationMs": 0.5
+      }
+    ],
+    "databaseQueries": {
+      "store.get": 12,
+      "index.getAll": 3,
+      "store.getAll": 2,
+      "store.openCursor": 2
+    },
+    "navigation": [
+      {
+        "duration": 53,
+        "domContentLoaded": 52.89999997615814
+      }
+    ]
+  },
+  "historyNavigationMs": 74,
+  "insightsNavigationMs": 110,
+  "dashboardNavigationMs": 54,
+  "longTasksAfterNavigationAndThreeIdleSeconds": [],
+  "idleLongTasksMs": [],
+  "authenticationHttpRequests": 1,
+  "syncHttpRequests": 2
+}

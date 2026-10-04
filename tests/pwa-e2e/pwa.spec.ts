@@ -540,13 +540,19 @@ test("isolated Chromium PWA installation and standalone launch restore the accou
     });
   } finally {
     console.log("PWA experiment: cleaning isolated install", installed);
-    if (installed)
-      await cdp.send(
-        "PWA.uninstall" as never,
-        { manifestId: `${origin}/` } as never,
-      );
-    console.log("PWA experiment: uninstall completed");
-    await context.close();
-    await server.close();
+    try {
+      if (installed)
+        await cdp.send(
+          "PWA.uninstall" as never,
+          { manifestId: `${origin}/` } as never,
+        );
+      console.log("PWA experiment: uninstall completed");
+    } finally {
+      try {
+        await context.close();
+      } finally {
+        await server.close();
+      }
+    }
   }
 });

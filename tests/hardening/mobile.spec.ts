@@ -221,7 +221,7 @@ for (const width of [360, 390, 430]) {
         {
           width,
           engine:
-            "Microsoft Edge, emulated touch viewport; no physical handset",
+            "Microsoft Edge, emulated mobile-width viewport; no physical handset",
           measurements,
         },
         null,
