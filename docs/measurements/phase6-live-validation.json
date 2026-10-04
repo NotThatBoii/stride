@@ -1,0 +1,101 @@
+{
+  "scope": "Executed Phase 6 manual validation; synthetic accounts only",
+  "dates": ["2026-10-04", "2026-10-05"],
+  "timezone": "Asia/Manila",
+  "applicationSource": "91e72259f0e0f74732b8c7cd92b22127c0fa0a6c",
+  "testedPrMerge": "c5b3460138d0f73b6927a35498eefa2f8f4f14e7",
+  "base": "9f240b6c95044819af5bc3e5742c96d46b601b6b",
+  "pullRequest": "https://github.com/NotThatBoii/stride/pull/8",
+  "reviewDeployment": "https://codex-phase-6-hardening.stride-89c.pages.dev/",
+  "ciRuns": {
+    "frontend": 37216358334,
+    "realSupabaseIntegration": 37216358320,
+    "windows": 37216358307,
+    "conclusion": "success",
+    "releasePublished": false
+  },
+  "latestWindowsValidationArtifact": {
+    "id": 11308269028,
+    "zipBytes": 4638642,
+    "zipSha256": "585bed24c4c62b4df5eefe63e6b507aba65df2fde24c9b3e108743e51155f282",
+    "digestVerifiedBeforeInstall": true,
+    "installerBytes": 2030984,
+    "installerExitCode": 0,
+    "separateApplicationIdentity": "com.philippaglinawan.stride.validation",
+    "ordinaryStrideInstallationTouched": false,
+    "actualLaunchAndCacheRestore": true,
+    "heldLogoutRequestRecovery": {
+      "method": "Delay the original browser/WebView request; do not replace the Auth response",
+      "delayBeforeRecoveryAvailableSeconds": 10,
+      "emailDisabled": true,
+      "accountDataHidden": true,
+      "reopenSignInClicked": true,
+      "reloadedGateEnabled": true,
+      "realSdkSignInRestoredOfflineSubjectAndSavedSession": true,
+      "normalFinalSignOutSettled": true
+    }
+  },
+  "manualNativeBehaviorMatrix": {
+    "packageCheckpoints": ["3d96ad8", "8b11c06", "af81874", "91e7225"],
+    "launchSignInPushPull": "passed",
+    "offlineCompletedSessionSeconds": 146,
+    "offlinePendingBeforeReconnect": 1,
+    "pendingAfterReconnect": 0,
+    "pausedTimerCloseRestartPersistence": "passed",
+    "nativeSaveAsAndOpenDialogs": "passed",
+    "additiveImportDisabledUntilSafetyBackupSaved": "passed",
+    "reverseSyncCompetingOfflineEditsKeepBoth": "passed",
+    "secondAccountInitiallyEmptyAndOriginalAccountHidden": "passed",
+    "nativeNotificationPermissionAndCountdown": "exercised",
+    "visibleWindowsToastDelivery": "unverified"
+  },
+  "hostedWeb": {
+    "finalEntryAsset": "/assets/index-C2PynC4Z.js",
+    "liveSupabaseSignInAndBidirectionalNativePeerSync": "passed",
+    "savedSessionUiSeconds": 40,
+    "controlledOnlineReload": "passed",
+    "controlledOfflineReload": "passed",
+    "controlledNewOfflineTab": "passed",
+    "serviceWorkerBypassDisabledForTheseChecks": true,
+    "offlineSubjectPendingBeforeReconnect": 1,
+    "pendingAfterReconnectAndRetry": 0,
+    "actualNativePeerPulledOfflineSubject": true,
+    "explicitUpdatePreservedThreeSubjectsAndSavedSession": true,
+    "heldOriginalLogoutRequestRecoveryAndRealSdkRelogin": "passed",
+    "normalFinalSignOutSettled": true,
+    "redirectDefectReproduced": "Cloudflare 308 /index.html to / left redirected cached navigation HTML",
+    "redirectFixDeployed": true,
+    "inspectedStaticCaches": {
+      "currentAndPreviousEntryCounts": [19, 19],
+      "authRpcSupabaseExportRecoveryUrlCount": 0,
+      "fixedCachedHtmlRedirected": false
+    }
+  },
+  "cleanup": {
+    "testAccountIds": [
+      "58b49b3d-098e-4536-848f-0fcbaef4ec8e",
+      "7b3bbf35-3289-4649-9093-bee850a95e2b"
+    ],
+    "method": "Delete exact disposable accounts through Supabase Users UI, then SELECT counts joined only to those UUIDs",
+    "personalAccountModified": false,
+    "remainingRows": {
+      "auth_users": 0,
+      "subjects": 0,
+      "sessions": 0,
+      "allocations": 0,
+      "preferences": 0,
+      "versions": 0,
+      "clocks": 0,
+      "changes": 0,
+      "operations": 0
+    },
+    "migrationOrAuthSettingChange": false
+  },
+  "explicitLimits": [
+    "Accounts were administratively confirmed; public signup, real email delivery, confirmation link and redirect loop checks need a reachable disposable inbox.",
+    "Windows notification permission/countdown were exercised; visible OS toast delivery was not observed.",
+    "Actual OS-installed PWA standalone launch, physical Android Add to Home Screen and iOS/Safari installation remain unverified.",
+    "macOS/Linux packaged behavior and physical mobile memory/battery were not tested.",
+    "Native behavior matrix spans recorded package checkpoints; the latest package was separately exercised for upgrade, restoration and the changed Auth guard."
+  ]
+}

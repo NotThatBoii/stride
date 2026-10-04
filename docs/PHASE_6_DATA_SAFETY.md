@@ -38,6 +38,8 @@ Ordinary JSON record shapes are retained. Values that JSON cannot represent use 
 
 Stored error metadata contains a category, timestamp, and rollback proof. User-facing and persisted last-error summaries use fixed safe messages rather than raw network errors or bearer headers.
 
+Sign-out immediately selects the empty entry workspace and persists its existing signed-out barrier before awaiting the official SDK. Entry controls stay disabled while that SDK operation remains pending. After ten seconds, **Reopen sign-in** can reload the renderer only if the durable marker exists, checked both when showing the action and again when clicked. This preserves account and legacy IndexedDB histories and avoids starting a competing login whose credentials a late logout could purge. If marker storage failed, reload recovery is not offered. The underlying observed SDK stall has not been diagnosed; the guard and recovery are independently covered by unit and browser regressions.
+
 ## Destructive-path audit
 
 | Path                                                 | Removed or replaced                                                                                 | Recoverable copy                                                                                                                                         | Confirmation and reversal                                                                                                                                                                                                 |
