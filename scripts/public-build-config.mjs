@@ -10,14 +10,14 @@ export function publicBuildConfiguration(environment, fallback) {
     fallback.publishableKey;
   if (url !== projectUrl)
     throw new Error(
-      "Windows release builds require the intended Stride Supabase project.",
+      "Release builds require the intended Stride Supabase project.",
     );
   if (
     typeof publishableKey !== "string" ||
     !/^sb_publishable_[A-Za-z0-9_-]{10,}$/.test(publishableKey)
   )
     throw new Error(
-      "Windows builds require a public publishable key, never a secret or service-role key.",
+      "Release builds require a public publishable key, never a secret or service-role key.",
     );
   return { url, publishableKey };
 }
@@ -55,7 +55,7 @@ export async function checkPublicBundle(directory, configuration) {
     !contents.includes(configuration.publishableKey)
   )
     throw new Error(
-      "The packaged frontend is missing its public Supabase configuration.",
+      "The frontend build is missing its public Supabase configuration.",
     );
   if (
     /(sb_secret_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}|(?:github_pat_|ghp_)[A-Za-z0-9_]{20,}|BEGIN (?:RSA |EC )?PRIVATE KEY)/.test(

@@ -843,6 +843,13 @@ for (const choice of ["remote", "both"] as const) {
     await saveSession(a.page, originalChild);
     await settle(a.page);
     await syncNow(b.page);
+    // Development mode has no app-shell worker. Load this route while online
+    // before the offline conflict review; production PWA precaches its chunks.
+    await b.page.getByRole("button", { name: "Settings", exact: true }).click();
+    await expect(
+      b.page.getByRole("heading", { name: "Settings", exact: true }),
+    ).toBeVisible();
+    await b.page.getByRole("button", { name: "Home", exact: true }).click();
     await b.context.setOffline(true);
     await saveSubject(
       b.page,

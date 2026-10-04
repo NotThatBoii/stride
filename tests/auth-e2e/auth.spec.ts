@@ -348,7 +348,6 @@ test("official session refresh keeps bootstrap visible without flashing login or
   page,
 }) => {
   const server = await mockAuth(page, {
-    passwordExpiresIn: 1,
     holdRefresh: true,
   });
   try {
@@ -356,6 +355,9 @@ test("official session refresh keeps bootstrap visible without flashing login or
     await seedLegacy(page);
     await signIn(page);
     await seedAccount(page, studyData("Refreshed account history"));
+    // Expire only after the ordinary import fixture has completed. Otherwise
+    // initial sync waits on this test's held refresh before seeding can lock.
+    await server.expireSavedSession();
     await watchPrivateScreens(page);
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect

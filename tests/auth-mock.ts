@@ -167,7 +167,22 @@ export async function mockAuth(page: Page, options: MockOptions = {}) {
     }
     return respond(404, { message: "Unexpected request" });
   });
-  return { calls, releaseLogout, releaseRefresh };
+  async function expireSavedSession(
+    email: keyof typeof users = "first@example.test",
+  ) {
+    const expired = {
+      ...sessionFor(email, -1),
+      expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) - 1,
+    };
+    await page.evaluate(async (session) => {
+      const { supabaseAuthStorageKey } = await import("/src/lib/supabase.ts");
+      if (!supabaseAuthStorageKey)
+        throw new Error("Auth fixture requires configured session storage.");
+      localStorage.setItem(supabaseAuthStorageKey, JSON.stringify(session));
+    }, expired);
+  }
+  return { calls, releaseLogout, releaseRefresh, expireSavedSession };
 }
 
 export async function signIn(

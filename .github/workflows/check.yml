@@ -13,7 +13,12 @@ jobs:
           cache: npm
       - run: npm ci --legacy-peer-deps
       - run: npm test
+      - run: npm run test:release-config
       - run: npm run build
       - run: npm run test:e2e
       - run: npm run test:e2e:auth
       - run: npm run test:e2e:sync
+      - run: npm run test:e2e:hardening
+      - run: npm run test:e2e:recovery
+      - run: npm run test:e2e:stress
+      - run: npm run test:e2e:pwa

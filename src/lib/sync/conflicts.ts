@@ -402,13 +402,13 @@ async function removeOperations(
         record_id: recordId,
         snapshot: {
           operation,
-          rejection: (await db.syncMetadata.get(`op_error:${operation.id}`))
+          rejection: (await db.syncMetadata.get(operationErrorKey(operation)))
             ?.value,
         },
         created_at: new Date().toISOString(),
       });
     }
-    await db.syncMetadata.delete(`op_error:${operation.id}`);
+    await db.syncMetadata.delete(operationErrorKey(operation));
   }
   await db.pendingOperations.bulkDelete(
     operations.map((operation) => operation.sequence!),
