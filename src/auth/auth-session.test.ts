@@ -267,8 +267,10 @@ describe("auth and local workspace selection", () => {
   });
 
   it("signs in, clears the account immediately on sign-out, then switches to a different account", async () => {
+    vi.useFakeTimers();
     const fake = fakeAuth();
-    const state = manager(fake.gateway);
+    const storage = memoryStorage();
+    const state = manager(fake.gateway, credentialKey, storage);
     await Promise.resolve();
     await state.signIn("a@example.test", "test-password");
     expect(getActiveWorkspace().accountId).toBe(accountA);
@@ -281,12 +283,28 @@ describe("auth and local workspace selection", () => {
         ),
     );
     const pending = state.signOut();
-    expect(state.getSnapshot().status).toBe("signed_out");
+    expect(state.getSnapshot()).toMatchObject({
+      status: "signed_out",
+      pendingAction: "sign_out",
+    });
     expect(getActiveWorkspace().accountId).toBeNull();
+    await vi.advanceTimersByTimeAsync(10_000);
+    await expect(
+      state.signIn("b@example.test", "test-password"),
+    ).rejects.toThrow("An account request is already in progress.");
+    await expect(
+      state.signUp("b@example.test", "test-password"),
+    ).rejects.toThrow("An account request is already in progress.");
+    expect(fake.auth.signInWithPassword).toHaveBeenCalledTimes(1);
+    expect(fake.auth.signUp).not.toHaveBeenCalled();
+    expect(state.getSnapshot().pendingAction).toBe("sign_out");
+    expect(state.canReopenSignIn()).toBe(true);
     fake.emit("SIGNED_IN", session(accountA));
     expect(getActiveWorkspace().accountId).toBeNull();
     finishSignOut({ error: null });
     await pending;
+    expect(state.getSnapshot().pendingAction).toBeNull();
+    expect(state.canReopenSignIn()).toBe(false);
     expect(fake.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
 
     fake.auth.signInWithPassword = vi.fn(async () => ({
@@ -295,7 +313,35 @@ describe("auth and local workspace selection", () => {
     }));
     await state.signIn("b@example.test", "test-password");
     expect(state.getSnapshot().user?.id).toBe(accountB);
+    expect(state.getSnapshot().pendingAction).toBeNull();
     expect(getActiveWorkspace().accountId).toBe(accountB);
+  });
+
+  it("does not offer sign-out reload recovery when its durable marker could not be saved", async () => {
+    const storage = memoryStorage();
+    storage.setItem(credentialKey, "opaque-test-session");
+    storage.setItem = () => {
+      throw new Error("Storage is unavailable");
+    };
+    const fake = fakeAuth(session(accountA));
+    const state = manager(fake.gateway, credentialKey, storage);
+    await Promise.resolve();
+    let finishSignOut!: (result: { error: Error | null }) => void;
+    fake.auth.signOut = vi.fn(
+      () =>
+        new Promise<{ error: Error | null }>(
+          (resolve) => (finishSignOut = resolve),
+        ),
+    );
+    const pending = state.signOut();
+    expect(state.getSnapshot().pendingAction).toBe("sign_out");
+    expect(state.canReopenSignIn()).toBe(false);
+    expect(getActiveWorkspace().accountId).toBeNull();
+    expect(storage.getItem(credentialKey)).toBe("opaque-test-session");
+    finishSignOut({ error: null });
+    await pending;
+    expect(state.getSnapshot().pendingAction).toBeNull();
+    expect(storage.getItem(credentialKey)).toBeNull();
   });
 
   it("preserves anonymous history across sign-in and sign-out", async () => {

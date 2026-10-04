@@ -419,6 +419,18 @@ test("sign-out immediately hides timers and study data while preserving all loca
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     await page.getByRole("button", { name: "Sign out", exact: true }).click();
     await expect(page.locator(".auth-screen")).toBeVisible();
+    await expect(page.getByLabel("Email", { exact: true })).toBeDisabled();
+    await expect(page.getByLabel("Password", { exact: true })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Finishing sign-out…", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Create account", exact: true }),
+    ).toBeDisabled();
+    await expect(page.locator(".account-form")).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
     await expect(page.locator(".app, .floating-timer")).toHaveCount(0);
     await expect(page.locator("body")).not.toContainText(
       "Account private history",
@@ -440,9 +452,63 @@ test("sign-out immediately hides timers and study data while preserving all loca
         ),
       )
       .toBeNull();
+    await expect(page.getByLabel("Email", { exact: true })).toBeEnabled();
     await signIn(page);
     await expect(page.locator("body")).toContainText("Account private history");
     await expect(page.locator(".floating-timer")).toBeVisible();
+    expect(await legacySnapshot(page)).toEqual(legacy);
+    expectAccountStudySync(server.calls);
+  } finally {
+    server.releaseLogout();
+  }
+});
+
+test("a stalled sign-out can reopen the entry gate without exposing or losing local histories", async ({
+  page,
+}) => {
+  const server = await mockAuth(page, { holdLogout: true });
+  try {
+    await page.goto("/");
+    const legacy = await seedLegacy(page);
+    await signIn(page);
+    await seedAccount(page, studyData("Account pending logout history"));
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+    await page.clock.install();
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Finishing sign-out…", exact: true }),
+    ).toBeDisabled();
+    const reopen = page.getByRole("button", {
+      name: "Reopen sign-in",
+      exact: true,
+    });
+    await expect(reopen).toHaveCount(0);
+    await page.clock.runFor(10_000);
+    await expect(reopen).toBeVisible();
+    await expect(page.getByLabel("Email", { exact: true })).toBeDisabled();
+    expect(
+      server.calls.filter((call) => call.includes("grant_type=password")),
+    ).toHaveLength(1);
+    await reopen.click();
+    await expect(page.locator(".auth-screen")).toBeVisible();
+    await expect(page.getByLabel("Email", { exact: true })).toBeEnabled();
+    await expect(page.locator(".app, .floating-timer")).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText(
+      "Account pending logout history",
+    );
+    expect(
+      await page.evaluate(() =>
+        localStorage.getItem(
+          "stride-auth-v1-fotgomkjwbahxmmovzmn.supabase.co:signed-out",
+        ),
+      ),
+    ).toBe("1");
+    expect(await legacySnapshot(page)).toEqual(legacy);
+    server.releaseLogout();
+    await signIn(page);
+    await expect(page.locator("body")).toContainText(
+      "Account pending logout history",
+    );
     expect(await legacySnapshot(page)).toEqual(legacy);
     expectAccountStudySync(server.calls);
   } finally {

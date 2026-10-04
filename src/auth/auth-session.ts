@@ -7,11 +7,13 @@ import {
 import { selectWorkspace } from "../lib/local-database";
 
 export type AuthStatus = "disabled" | "restoring" | "signed_out" | "signed_in";
+export type AuthAction = "sign_in" | "sign_up" | "sign_out";
 
 export interface AuthSnapshot {
   status: AuthStatus;
   user: User | null;
   error: string | null;
+  pendingAction: AuthAction | null;
 }
 
 // Keeping this small interface makes the session and workspace transition
@@ -82,7 +84,7 @@ export class AuthSessionManager {
   private lifecycle = 0;
   private initialSettled = false;
   private initialTimer: ReturnType<typeof setTimeout> | null = null;
-  private operation = false;
+  private operation: AuthAction | null = null;
   private operationSerial = 0;
   private interruptedBySignOut = false;
   private signedOutBarrier = false;
@@ -107,6 +109,7 @@ export class AuthSessionManager {
       status: "restoring",
       user: null,
       error: null,
+      pendingAction: null,
     };
   }
 
@@ -219,7 +222,7 @@ export class AuthSessionManager {
     this.settleInitial();
     this.subscription?.unsubscribe();
     this.subscription = null;
-    this.operation = false;
+    this.operation = null;
     this.interruptedBySignOut = false;
     ++this.operationSerial;
     this.publish({ status: "restoring", user: null, error: null });
@@ -228,7 +231,7 @@ export class AuthSessionManager {
   readonly signIn = async (email: string, password: string): Promise<void> => {
     const client = this.requireClient();
     const previous = this.snapshot;
-    const operation = this.beginOperation();
+    const operation = this.beginOperation("sign_in");
     const lifecycle = this.lifecycle;
     this.publish({ status: "signed_out", user: null, error: null });
     try {
@@ -256,7 +259,7 @@ export class AuthSessionManager {
         });
       throw new Error(messageFrom(error));
     } finally {
-      if (this.isCurrentOperation(lifecycle, operation)) this.operation = false;
+      this.finishOperation(lifecycle, operation);
     }
   };
 
@@ -267,7 +270,7 @@ export class AuthSessionManager {
     const client = this.requireClient();
     if (this.snapshot.status === "signed_in")
       throw new Error("Sign out before creating another account.");
-    const operation = this.beginOperation();
+    const operation = this.beginOperation("sign_up");
     const lifecycle = this.lifecycle;
     this.publish({ status: "signed_out", user: null, error: null });
     try {
@@ -300,13 +303,13 @@ export class AuthSessionManager {
         });
       throw new Error(messageFrom(error));
     } finally {
-      if (this.isCurrentOperation(lifecycle, operation)) this.operation = false;
+      this.finishOperation(lifecycle, operation);
     }
   };
 
   readonly signOut = async (): Promise<void> => {
     const client = this.requireClient();
-    const operation = this.beginOperation();
+    const operation = this.beginOperation("sign_out");
     const lifecycle = this.lifecycle;
     // This must happen before the first await, including when offline.
     this.markSignedOut();
@@ -334,13 +337,16 @@ export class AuthSessionManager {
         this.hasSignedOutMarker()
       )
         this.purgeSavedCredential();
-      if (this.isCurrentOperation(lifecycle, operation)) this.operation = false;
+      this.finishOperation(lifecycle, operation);
     }
   };
 
   readonly clearError = (): void => {
     if (this.snapshot.error) this.publish({ ...this.snapshot, error: null });
   };
+
+  readonly canReopenSignIn = (): boolean =>
+    this.active && this.operation === "sign_out" && this.hasSignedOutMarker();
 
   private requireClient(): AuthGateway {
     if (this.client) return this.client;
@@ -349,14 +355,20 @@ export class AuthSessionManager {
     throw error;
   }
 
-  private beginOperation(): number {
+  private beginOperation(action: AuthAction): number {
     if (!this.active) throw new Error("Authentication is still opening.");
     if (this.operation)
       throw new Error("An account request is already in progress.");
-    this.operation = true;
+    this.operation = action;
     this.interruptedBySignOut = false;
     if (!this.initialSettled) this.settleInitial();
     return ++this.operationSerial;
+  }
+
+  private finishOperation(lifecycle: number, operation: number): void {
+    if (!this.isCurrentOperation(lifecycle, operation)) return;
+    this.operation = null;
+    this.publish(this.snapshot);
   }
 
   private isCurrent(lifecycle: number): boolean {
@@ -430,18 +442,19 @@ export class AuthSessionManager {
     });
   }
 
-  private publish(next: AuthSnapshot): void {
+  private publish(next: Omit<AuthSnapshot, "pendingAction">): void {
     try {
       this.switchWorkspace(
         next.status === "signed_in" ? (next.user?.id ?? null) : null,
       );
-      this.snapshot = next;
+      this.snapshot = { ...next, pendingAction: this.operation };
     } catch {
       this.switchWorkspace(null);
       this.snapshot = {
         status: "signed_out",
         user: null,
         error: "Unable to open this account's local workspace.",
+        pendingAction: this.operation,
       };
     }
     this.listeners.forEach((listener) => listener());

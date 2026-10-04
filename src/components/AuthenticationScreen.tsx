@@ -1,16 +1,34 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { PwaUpdateNotice } from "./Pwa";
 
 export default function AuthenticationScreen() {
-  const { status, error, signIn, signUp, clearError } = useAuth();
+  const {
+    status,
+    error,
+    pendingAction,
+    signIn,
+    signUp,
+    canReopenSignIn,
+    clearError,
+  } = useAuth();
   const [mode, setMode] = useState<"sign_in" | "sign_up">("sign_in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [localError, setLocalError] = useState("");
   const [notice, setNotice] = useState("");
+  const [reopenAvailable, setReopenAvailable] = useState(false);
+  const busy = pending || pendingAction !== null;
+  const signingOut = pendingAction === "sign_out";
+
+  useEffect(() => {
+    setReopenAvailable(false);
+    if (!signingOut) return;
+    const timer = setTimeout(() => setReopenAvailable(true), 10_000);
+    return () => clearTimeout(timer);
+  }, [signingOut]);
 
   function changeMode(next: typeof mode) {
     setMode(next);
@@ -22,7 +40,7 @@ export default function AuthenticationScreen() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending || status === "disabled") return;
+    if (busy || status === "disabled") return;
     setPending(true);
     setLocalError("");
     setNotice("");
@@ -55,7 +73,7 @@ export default function AuthenticationScreen() {
         <span className="brand-mark">s</span>
         <strong>Stride</strong>
       </header>
-      <PwaUpdateNotice busy={pending} />
+      <PwaUpdateNotice busy={busy} />
       <main className="auth-card" aria-labelledby="auth-heading">
         <span className="eyebrow">BUILD YOUR STUDY HABIT</span>
         <h1 id="auth-heading">Welcome to Stride.</h1>
@@ -85,7 +103,7 @@ export default function AuthenticationScreen() {
                 type="button"
                 className={`account-tab ${mode === "sign_in" ? "active" : ""}`}
                 aria-pressed={mode === "sign_in"}
-                disabled={pending}
+                disabled={busy}
                 onClick={() => changeMode("sign_in")}
               >
                 Sign in
@@ -94,7 +112,7 @@ export default function AuthenticationScreen() {
                 type="button"
                 className={`account-tab ${mode === "sign_up" ? "active" : ""}`}
                 aria-pressed={mode === "sign_up"}
-                disabled={pending}
+                disabled={busy}
                 onClick={() => changeMode("sign_up")}
               >
                 Create account
@@ -102,7 +120,7 @@ export default function AuthenticationScreen() {
             </div>
             <form
               className="account-form"
-              aria-busy={pending}
+              aria-busy={busy}
               onSubmit={(event) => void submit(event)}
             >
               <label>
@@ -113,7 +131,7 @@ export default function AuthenticationScreen() {
                   required
                   maxLength={320}
                   value={email}
-                  disabled={pending}
+                  disabled={busy}
                   onChange={(event) => setEmail(event.target.value)}
                 />
               </label>
@@ -130,7 +148,7 @@ export default function AuthenticationScreen() {
                     mode === "sign_up" ? "auth-password-hint" : undefined
                   }
                   value={password}
-                  disabled={pending}
+                  disabled={busy}
                   onChange={(event) => setPassword(event.target.value)}
                 />
               </label>
@@ -149,11 +167,20 @@ export default function AuthenticationScreen() {
                   {notice}
                 </p>
               )}
-              <button disabled={pending} className="large auth-submit">
-                {pending ? (
+              {signingOut && (
+                <p className="account-message auth-notice" role="status">
+                  Your study data is saved. Please wait before signing in again.
+                </p>
+              )}
+              <button disabled={busy} className="large auth-submit">
+                {busy ? (
                   <>
                     <LoaderCircle size={17} className="auth-spinner" />
-                    {mode === "sign_in" ? "Signing in…" : "Creating account…"}
+                    {signingOut
+                      ? "Finishing sign-out…"
+                      : mode === "sign_in"
+                        ? "Signing in…"
+                        : "Creating account…"}
                   </>
                 ) : (
                   <>
@@ -163,6 +190,23 @@ export default function AuthenticationScreen() {
                 )}
               </button>
             </form>
+            {signingOut && reopenAvailable && canReopenSignIn() && (
+              <div className="account-message">
+                <p role="status">
+                  Sign-out is taking longer than expected. Reopen sign-in to
+                  continue. Your saved study data will be kept.
+                </p>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => {
+                    if (canReopenSignIn()) location.reload();
+                  }}
+                >
+                  Reopen sign-in
+                </button>
+              </div>
+            )}
             <p className="auth-storage-note">
               Sign in to your personal study workspace. Study records stay on
               this device and synchronized across your signed-in devices.
