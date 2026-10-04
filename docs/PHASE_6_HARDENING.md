@@ -49,7 +49,7 @@ The local `desktop:build` attempt failed because Cargo/Rust and Visual Studio C+
 | Native countdown/notification preference                               | Preference saved and one-minute countdown completed/paused; visual toast delivery unverified                      |
 | Recovery UI                                                            | Settings opened without error; preserved import copies visible                                                    |
 | Sign-out/account switch                                                | Passed settled sign-out/relogin without reload; second account isolated; reload recovery exercised                |
-| Conflict actions                                                       | Passed actual native inspection and Keep both; both copies/preserved recovery reached hosted peer                 |
+| Conflict actions                                                       | Passed native inspection and Keep both; both subjects reached the hosted peer, while recovery copies stayed local |
 | `af81874` installer upgrade/restart                                    | SHA verified; actual close/upgrade/restart preserved account cache and paused timer                               |
 | Latest `91e7225` validation installer                                  | SHA verified; silent upgrade exit 0; cache restored; live delayed-logout recovery and real SDK re-login passed    |
 
