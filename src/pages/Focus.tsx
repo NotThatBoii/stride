@@ -327,7 +327,8 @@ export default function Focus({
       {discard && (
         <Modal title="Discard this session?" onClose={() => setDiscard(false)}>
           <p>
-            Your {formatTime(seconds)} of unsaved study time will be removed.
+            Your {formatTime(seconds)} of unsaved study time will be removed
+            from Focus. A paused recovery copy stays on this device in Settings.
           </p>
           <div className="dialog-actions">
             <button className="secondary" onClick={() => setDiscard(false)}>

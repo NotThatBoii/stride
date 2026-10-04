@@ -75,7 +75,10 @@ test("a selected database that does not match the authenticated user fails close
       const storage = await import("/src/lib/storage.ts");
       const other = new storage.StrideDatabase(`stride-account-${id}`, id);
       await storage.initialize(other);
-      await storage.restoreData(data, other);
+      const imports = await import("/src/lib/sync/import.ts");
+      const stage = await imports.stageImport(other, data, "backup");
+      await imports.commitImport(other, stage.id);
+      await other.preferences.put({ ...data.settings, id: 1 });
       storage.selectWorkspace(id);
     },
     {

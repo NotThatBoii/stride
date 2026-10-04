@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "Stride — Build consistency",
+  "short_name": "Stride",
+  "description": "Build your study habit, one session at a time.",
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#18191c",
+  "background_color": "#18191c",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

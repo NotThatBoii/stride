@@ -291,11 +291,15 @@ export function createSyncAdapter(
           result.status === 408 ||
           result.status === 429 ||
           result.status >= 500;
-        // Known PostgreSQL validation/constraint errors prove this RPC
-        // transaction rolled back. Network/proxy failures and malformed
-        // success replies cannot establish that fact.
+        // Known validation/constraint errors prove this RPC rolled back.
+        // A reused UUID with another body (23505) can mean its original request
+        // already committed; it must retain the original receipt uncertainty.
+        // Network/proxy failures and malformed success replies are also unknown.
         const definitiveNoCommit =
-          !auth && !transient && /^(22|23)[0-9A-Z]{3}$/.test(result.error.code);
+          !auth &&
+          !transient &&
+          result.error.code !== "23505" &&
+          /^(22|23)[0-9A-Z]{3}$/.test(result.error.code);
         throw new SyncError(
           auth
             ? "Your account session needs attention. Local changes are preserved."

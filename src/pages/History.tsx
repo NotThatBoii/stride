@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useStride } from "../state";
 import { dayKey, weekStart, formatTime } from "../lib/analytics";
 import { SessionList } from "../components/Sessions";
@@ -8,16 +8,19 @@ export default function History() {
   const [subject, setSubject] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const sessions = data.sessions.filter(
-    (s) =>
-      (!subject || s.subject_id === subject) &&
-      data.slices.some(
-        (x) =>
-          x.session_id === s.id &&
-          (!from || x.day >= from) &&
-          (!to || x.day <= to),
-      ),
-  );
+  const sessions = useMemo(() => {
+    const ids = new Set(
+      data.slices
+        .filter(
+          (slice) => (!from || slice.day >= from) && (!to || slice.day <= to),
+        )
+        .map((slice) => slice.session_id),
+    );
+    return data.sessions.filter(
+      (session) =>
+        (!subject || session.subject_id === subject) && ids.has(session.id),
+    );
+  }, [data.sessions, data.slices, subject, from, to]);
   return (
     <>
       <div className="page-heading">

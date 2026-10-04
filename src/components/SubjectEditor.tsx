@@ -122,8 +122,9 @@ export default function SubjectEditor({
           {confirm && (
             <div role="alert">
               <p>
-                Delete “{subject.name}” and all of its study sessions? This
-                cannot be undone.
+                Remove “{subject.name}” and all of its study sessions from your
+                history? A recovery copy stays on this device and can be
+                exported or imported in Settings.
               </p>
               <button
                 disabled={busy}
@@ -132,7 +133,7 @@ export default function SubjectEditor({
                   if (await act(() => deleteSubject(subject.id))) onClose();
                 }}
               >
-                Permanently delete
+                Delete subject and sessions
               </button>
             </div>
           )}

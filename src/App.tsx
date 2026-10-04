@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   Home,
   BookOpen,
@@ -22,11 +22,6 @@ import { saveRunning } from "./lib/storage";
 import { notifySessionComplete } from "./lib/platform";
 import { Mountains } from "./components/Artwork";
 import Dashboard from "./pages/Dashboard";
-import { Subjects, SubjectDetail } from "./pages/Subjects";
-import Focus from "./pages/Focus";
-import History from "./pages/History";
-import Insights from "./pages/Insights";
-import Settings from "./pages/Settings";
 import SubjectEditor from "./components/SubjectEditor";
 import Onboarding from "./components/Onboarding";
 import { AccountPanel } from "./components/AccountPanel";
@@ -34,6 +29,19 @@ import { LegacyImport } from "./components/HistoryImport";
 import { syncLabel, useSync } from "./sync/SyncProvider";
 import { Modal } from "./components/UI";
 import { SessionList } from "./components/Sessions";
+import { PwaUpdateNotice } from "./components/Pwa";
+const Subjects = lazy(() =>
+  import("./pages/Subjects").then((module) => ({ default: module.Subjects })),
+);
+const SubjectDetail = lazy(() =>
+  import("./pages/Subjects").then((module) => ({
+    default: module.SubjectDetail,
+  })),
+);
+const Focus = lazy(() => import("./pages/Focus"));
+const History = lazy(() => import("./pages/History"));
+const Insights = lazy(() => import("./pages/Insights"));
+const Settings = lazy(() => import("./pages/Settings"));
 type Page = "Home" | "Subjects" | "Focus" | "History" | "Insights" | "Settings";
 const links = [
   { name: "Home", icon: Home },
@@ -117,18 +125,30 @@ export default function App() {
     setSubject(id);
     setPage("Subjects");
   }
-  const daySessions = data.sessions.filter(
-    (s) =>
-      data.slices.some((x) => x.session_id === s.id && x.day === day) &&
-      (subject
-        ? s.subject_id === subject
-        : data.subjects.some((x) => x.id === s.subject_id && !x.archived)),
-  );
+  const daySessions = useMemo(() => {
+    if (!day) return [];
+    const ids = new Set(
+      data.slices
+        .filter((slice) => slice.day === day)
+        .map((slice) => slice.session_id),
+    );
+    const activeSubjects = new Set(
+      data.subjects.filter((item) => !item.archived).map((item) => item.id),
+    );
+    return data.sessions.filter(
+      (session) =>
+        ids.has(session.id) &&
+        (subject
+          ? session.subject_id === subject
+          : activeSubjects.has(session.subject_id)),
+    );
+  }, [data.sessions, data.slices, data.subjects, day, subject]);
   const showAuthError = Boolean(
     auth.error && page !== "Settings" && !accountOpen,
   );
   return (
     <>
+      <PwaUpdateNotice busy={busy} timer={!!data.running} />
       <LegacyImport />
       {!data.settings.onboarded ? (
         <Onboarding onAccount={() => setAccountOpen(true)} />
@@ -227,38 +247,42 @@ export default function App() {
               </button>
             </header>
             <div className="page-content" key={subject ?? page}>
-              {page === "Home" && (
-                <Dashboard
-                  onAdd={() => setAdd(true)}
-                  onSubject={openSubject}
-                  onFocus={focus}
-                  onDay={setDay}
-                  onHistory={() => navigate("History")}
-                />
-              )}{" "}
-              {page === "Subjects" &&
-                (subject ? (
-                  <SubjectDetail
-                    id={subject}
-                    onBack={() => setSubject(undefined)}
-                    onFocus={focus}
-                    onDay={setDay}
-                  />
-                ) : (
-                  <Subjects
+              <Suspense
+                fallback={<p role="status">Opening {page.toLowerCase()}…</p>}
+              >
+                {page === "Home" && (
+                  <Dashboard
                     onAdd={() => setAdd(true)}
                     onSubject={openSubject}
+                    onFocus={focus}
+                    onDay={setDay}
+                    onHistory={() => navigate("History")}
                   />
-                ))}
-              {page === "Focus" && (
-                <Focus
-                  initialSubject={focusSubject}
-                  onAdd={() => setAdd(true)}
-                />
-              )}{" "}
-              {page === "History" && <History />}
-              {page === "Insights" && <Insights />}
-              {page === "Settings" && <Settings />}
+                )}{" "}
+                {page === "Subjects" &&
+                  (subject ? (
+                    <SubjectDetail
+                      id={subject}
+                      onBack={() => setSubject(undefined)}
+                      onFocus={focus}
+                      onDay={setDay}
+                    />
+                  ) : (
+                    <Subjects
+                      onAdd={() => setAdd(true)}
+                      onSubject={openSubject}
+                    />
+                  ))}
+                {page === "Focus" && (
+                  <Focus
+                    initialSubject={focusSubject}
+                    onAdd={() => setAdd(true)}
+                  />
+                )}{" "}
+                {page === "History" && <History />}
+                {page === "Insights" && <Insights />}
+                {page === "Settings" && <Settings />}
+              </Suspense>
               <footer className="page-footer">
                 <span>STRIDE</span> Build consistency, one session at a time.
               </footer>

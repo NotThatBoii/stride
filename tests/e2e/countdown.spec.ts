@@ -65,7 +65,7 @@ test("countdown completes once and time edits recalculate streaks", async ({
     .getByRole("button", { name: "Delete subject", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Permanently delete", exact: true })
+    .getByRole("button", { name: "Delete subject and sessions", exact: true })
     .click();
   await page.getByRole("button", { name: "Home", exact: true }).click();
   await expect(

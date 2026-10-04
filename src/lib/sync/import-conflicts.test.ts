@@ -603,7 +603,11 @@ describe("conflict preservation and deliberate resolution", () => {
       });
       await db.syncMetadata.put({
         key: `op_error:${rejected.id}`,
-        value: JSON.stringify({ kind: "permanent", definitiveNoCommit: true }),
+        value: JSON.stringify({
+          kind: "permanent",
+          definitiveNoCommit: true,
+          rollbackProofVersion: 1,
+        }),
       });
       const parent = await conflict(db);
       const moved = {
@@ -740,7 +744,11 @@ describe("conflict preservation and deliberate resolution", () => {
     });
     await db.syncMetadata.put({
       key: `op_error:${rejected.id}`,
-      value: JSON.stringify({ kind: "permanent", definitiveNoCommit: true }),
+      value: JSON.stringify({
+        kind: "permanent",
+        definitiveNoCommit: true,
+        rollbackProofVersion: 1,
+      }),
     });
     const edited = {
       ...child,
@@ -816,7 +824,11 @@ describe("conflict preservation and deliberate resolution", () => {
     });
     await db.syncMetadata.put({
       key: `op_error:${rejected.id}`,
-      value: JSON.stringify({ kind: "permanent", definitiveNoCommit: true }),
+      value: JSON.stringify({
+        kind: "permanent",
+        definitiveNoCommit: true,
+        rollbackProofVersion: 1,
+      }),
     });
     const parent = await db.transaction("rw", db.tables, () =>
       preserveConflict(db, {
@@ -877,7 +889,11 @@ describe("conflict preservation and deliberate resolution", () => {
     });
     await db.syncMetadata.put({
       key: `op_error:${rejected.id}`,
-      value: JSON.stringify({ kind: "permanent", definitiveNoCommit: true }),
+      value: JSON.stringify({
+        kind: "permanent",
+        definitiveNoCommit: true,
+        rollbackProofVersion: 1,
+      }),
     });
     const parent = await db.transaction("rw", db.tables, () =>
       preserveConflict(db, {

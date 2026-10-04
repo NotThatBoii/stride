@@ -23,7 +23,7 @@ import {
   normalizeRevision,
 } from "./normalization";
 import { pullChanges, SYNC_STREAM } from "./pull";
-import { clearOperationErrors, pushPending } from "./push";
+import { pushPending } from "./push";
 import {
   SyncError,
   type ApplyResult,
@@ -353,8 +353,8 @@ describe("Outbox and transactional pull integrity", () => {
     expect(result.applied).toBe(1);
     expect(await db.pendingOperations.count()).toBe(1);
     expect(await db.syncMetadata.get(`op_error:${invalid.id}`)).toBeDefined();
-    await clearOperationErrors(db);
-    expect(await db.syncMetadata.get(`op_error:${invalid.id}`)).toBeUndefined();
+    await pushPending(db, adapterFrom([]), guard);
+    expect(await db.syncMetadata.get(`op_error:${invalid.id}`)).toBeDefined();
   });
   it("records a stale revision conflict before completing its rejected operation", async () => {
     const db = await device();
@@ -973,5 +973,35 @@ describe("Authenticated RPC lifecycle and safe errors", () => {
         guard,
       ).apply(op),
     ).rejects.toMatchObject({ definitiveNoCommit: false });
+  });
+  it("keeps receipt uncertainty after a PostgreSQL UUID reuse rejection", async () => {
+    const rejected = mockClient();
+    rejected.raw.rpc.mockImplementation(() => {
+      const builder = {
+        setHeader() {
+          return builder;
+        },
+        abortSignal() {
+          return builder;
+        },
+        retry() {
+          return builder;
+        },
+        then(resolve: (value: unknown) => void) {
+          resolve({ status: 409, data: null, error: { code: "23505" } });
+        },
+      };
+      return builder as never;
+    });
+    await expect(
+      createSyncAdapter(
+        rejected.client,
+        "11111111-1111-4111-8111-111111111111",
+        guard,
+      ).apply(normalizeOperation(operation())),
+    ).rejects.toMatchObject({
+      kind: "permanent",
+      definitiveNoCommit: false,
+    });
   });
 });

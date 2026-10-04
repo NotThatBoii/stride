@@ -34,8 +34,11 @@ export async function notifySessionComplete(): Promise<void> {
   }
 }
 
-export async function exportBackup(text: string): Promise<boolean> {
-  const filename = `stride-export-${new Date().toISOString().slice(0, 10)}.json`;
+export async function exportBackup(
+  text: string,
+  kind: "backup" | "recovery" = "backup",
+): Promise<boolean> {
+  const filename = `stride-${kind === "recovery" ? "recovery" : "export"}-${new Date().toISOString().slice(0, 10)}.json`;
   if (isDesktop) {
     const { save } = await import("@tauri-apps/plugin-dialog");
     const path = await save({

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
+import { PwaUpdateNotice } from "./Pwa";
 
 export default function AuthenticationScreen() {
   const { status, error, signIn, signUp, clearError } = useAuth();
@@ -54,6 +55,7 @@ export default function AuthenticationScreen() {
         <span className="brand-mark">s</span>
         <strong>Stride</strong>
       </header>
+      <PwaUpdateNotice busy={pending} />
       <main className="auth-card" aria-labelledby="auth-heading">
         <span className="eyebrow">BUILD YOUR STUDY HABIT</span>
         <h1 id="auth-heading">Welcome to Stride.</h1>

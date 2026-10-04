@@ -119,7 +119,8 @@ export function SessionList({ sessions }: { sessions: Session[] }) {
         >
           <p>
             This removes {formatTime(deleting.duration_seconds)} from your
-            history. Your heatmaps and streaks will update.
+            history. Your heatmaps and streaks will update. A recovery copy
+            stays on this device in Settings.
           </p>
           <div className="dialog-actions">
             <button

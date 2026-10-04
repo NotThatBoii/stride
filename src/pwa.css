@@ -1,0 +1,36 @@
+.pwa-update-notice {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  max-width: 950px;
+  margin: 12px auto;
+  padding: 16px 22px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.pwa-update-notice p {
+  margin: 6px 0 0;
+}
+.pwa-settings {
+  margin: 20px 0;
+}
+.pwa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.pwa-actions button {
+  min-height: 44px;
+}
+@media (max-width: 650px) {
+  .pwa-update-notice {
+    flex-direction: column;
+    align-items: stretch;
+    margin: 8px;
+    padding: 16px;
+  }
+}

@@ -7,6 +7,7 @@ import type { Data } from "../models";
 import { AccountPanel } from "../components/AccountPanel";
 import SyncPanel from "../components/SyncPanel";
 import { HistoryImportDialog } from "../components/HistoryImport";
+import { PwaSettings } from "../components/Pwa";
 import {
   appVersion,
   isDesktop,
@@ -101,6 +102,7 @@ export default function Settings() {
       </div>
       <AccountPanel />
       <SyncPanel />
+      <PwaSettings busy={busy} timer={!!data.running} />
       <form
         className="settings-form"
         onSubmit={(e) => {

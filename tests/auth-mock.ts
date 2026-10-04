@@ -202,7 +202,19 @@ export async function seedAccount(page: Page, data: Data) {
     const db = storage.getActiveDatabase();
     if (!db.accountId)
       throw new Error("Test fixture requires a signed-in account.");
-    await storage.restoreData(value, db);
+    const imports = await import("/src/lib/sync/import.ts");
+    const { activeSyncWorker: worker } = await import(
+      "/src/lib/sync/worker.ts"
+    );
+    if (!worker || worker.db !== db)
+      throw new Error("Test fixture requires its account worker.");
+    await worker.runExclusive(async (current, guard) => {
+      const stage = await imports.stageImport(current, value, "backup", guard);
+      await imports.commitImport(current, stage.id, guard);
+      // Fixture setup explicitly supplies this device's onboarding/appearance.
+      await current.preferences.put({ ...value.settings, id: 1 });
+      guard();
+    });
   }, data);
 }
 
