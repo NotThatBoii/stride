@@ -6,6 +6,7 @@ import { dirname, resolve } from "node:path";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const cli = resolve(root, "node_modules/supabase/dist/supabase.js");
 const tests = resolve(root, "supabase/tests/local-integration.mjs");
+const vitest = resolve(root, "node_modules/vitest/vitest.mjs");
 
 function fail(message) {
   console.error(message);
@@ -86,14 +87,15 @@ if (!existsSync(cli)) {
       }
 
       if (url) {
+        const testEnv = {
+          ...localEnv,
+          STRIDE_LOCAL_SUPABASE_URL: url.origin,
+          STRIDE_LOCAL_SUPABASE_PUBLIC_KEY: publicKey,
+          STRIDE_LOCAL_SUPABASE_ADMIN_KEY: adminKey,
+        };
         const result = spawnSync(process.execPath, ["--test", tests], {
           cwd: root,
-          env: {
-            ...localEnv,
-            STRIDE_LOCAL_SUPABASE_URL: url.origin,
-            STRIDE_LOCAL_SUPABASE_PUBLIC_KEY: publicKey,
-            STRIDE_LOCAL_SUPABASE_ADMIN_KEY: adminKey,
-          },
+          env: testEnv,
           stdio: "inherit",
           windowsHide: true,
         });
@@ -101,6 +103,19 @@ if (!existsSync(cli)) {
           fail("Could not start the local integration tests.");
         } else {
           process.exitCode = result.status ?? 1;
+        }
+        if (!existsSync(vitest)) {
+          fail("Vitest is missing for the client integration gate.");
+        } else {
+          const clientResult = spawnSync(
+            process.execPath,
+            [vitest, "run", "--config", "vitest.integration.config.ts"],
+            { cwd: root, env: testEnv, stdio: "inherit", windowsHide: true },
+          );
+          if (clientResult.error)
+            fail("Could not start the real client integration tests.");
+          else if (clientResult.status !== 0)
+            process.exitCode = clientResult.status ?? 1;
         }
       }
     }

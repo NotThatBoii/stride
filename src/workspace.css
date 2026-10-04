@@ -184,6 +184,76 @@ textarea {
 .topbar-note {
   opacity: 0.65;
 }
+.sync-status {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 4px 0;
+  font-size: inherit;
+  font-weight: 400;
+}
+.import-banner {
+  position: relative;
+  z-index: 2;
+  max-width: 950px;
+  margin: 12px auto;
+  padding: 16px 22px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.legacy-import .row {
+  justify-content: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sync-panel {
+  margin: 20px 0;
+}
+.sync-panel > .row {
+  justify-content: space-between;
+  gap: 20px;
+}
+.sync-conflict {
+  border-top: 1px solid var(--border);
+  padding: 16px 0;
+}
+.sync-conflict summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+.conflict-versions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+.conflict-versions > div {
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.conflict-versions h3 {
+  font-size: 12px;
+  opacity: 0.65;
+  margin: 0 0 10px;
+}
+.conflict-versions p {
+  margin: 8px 0;
+}
+.sync-conflict .dialog-actions {
+  flex-wrap: wrap;
+}
+@media (max-width: 650px) {
+  .conflict-versions {
+    grid-template-columns: 1fr;
+  }
+  .import-banner {
+    margin: 8px;
+  }
+}
 main {
   isolation: isolate;
   min-width: 0;

@@ -28,8 +28,8 @@ export function AccountPanel() {
         <div>
           <h2 id={headingId}>Account</h2>
           <p>
-            Your study data is kept in this account’s local workspace. Cloud
-            study sync is not active yet.
+            Your study data is saved locally and synchronized with your account
+            across devices when connected.
           </p>
         </div>
         <span className="account-status">Signed in</span>

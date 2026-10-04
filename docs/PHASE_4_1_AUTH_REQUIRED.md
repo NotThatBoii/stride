@@ -1,5 +1,7 @@
 # Phase 4.1: required authentication before entry
 
+> Required authentication remains unchanged. [Phase 5](PHASE_5_SYNC.md) now adds account synchronization and explicit legacy/JSON history recovery. Statements below about no sync, no legacy scan, and deferred import describe Phase 4.1 at completion; its historical test counts do not establish Phase 5 validation.
+
 Stride now requires a Supabase email/password session before it opens study data. The initial welcome/guest path has been replaced by the authentication screen. The account's study records still live in its local Dexie/IndexedDB cache. This change does not implement cloud synchronization or import legacy anonymous history.
 
 ## Entry and workspace selection
@@ -53,15 +55,15 @@ Auth browser coverage uses intercepted Supabase responses. It should cover logge
 
 Final validation on 2026-10-03:
 
-| Command | Actual result |
-| --- | --- |
-| `npm test` | 55 passed, 5 test files, 0 failed |
-| `npm run test:db` | 13 passed, 0 failed |
-| `npm run test:e2e` | 7 passed, 0 failed |
-| `npm run test:e2e:auth` | 14 passed, 0 failed: 13 configured Auth checks and 1 missing-configuration check |
-| `npm run build` | Strict TypeScript and Vite production build passed; existing dependency annotation and large-chunk warnings remain |
-| `npm run desktop:build` | Attempted; could not obtain Cargo metadata because Rust/Cargo is unavailable |
-| `npm run test:integration` | Attempted; disposable local Supabase stack is unavailable, so its integration checks did not run |
+| Command                    | Actual result                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `npm test`                 | 55 passed, 5 test files, 0 failed                                                                                  |
+| `npm run test:db`          | 13 passed, 0 failed                                                                                                |
+| `npm run test:e2e`         | 7 passed, 0 failed                                                                                                 |
+| `npm run test:e2e:auth`    | 14 passed, 0 failed: 13 configured Auth checks and 1 missing-configuration check                                   |
+| `npm run build`            | Strict TypeScript and Vite production build passed; existing dependency annotation and large-chunk warnings remain |
+| `npm run desktop:build`    | Attempted; could not obtain Cargo metadata because Rust/Cargo is unavailable                                       |
+| `npm run test:integration` | Attempted; disposable local Supabase stack is unavailable, so its integration checks did not run                   |
 
 Browser checks ran in installed Microsoft Edge with isolated profiles and intercepted official Supabase Auth endpoints. They cover entry restrictions, sign-in/sign-up/confirmation, invalid credentials and offline failures, cached session and delayed refresh without login/legacy flashes, immediate and failed logout, account isolation, legacy database/timer/recovery preservation, backup round-trip, and authenticated timer/storage workflows. Desktop and 390-pixel-wide authentication screenshots were visually checked. No hosted users were created and no study synchronization was performed. These results do not establish hosted email delivery, real hosted sign-in, or packaged Windows behavior.
 

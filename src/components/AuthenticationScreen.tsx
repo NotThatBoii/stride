@@ -163,7 +163,7 @@ export default function AuthenticationScreen() {
             </form>
             <p className="auth-storage-note">
               Sign in to your personal study workspace. Study records stay on
-              this device; cloud sync is coming later.
+              this device and synchronized across your signed-in devices.
             </p>
           </>
         )}

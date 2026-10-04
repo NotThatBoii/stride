@@ -14,6 +14,7 @@
     "test:integration": "node scripts/run-local-integration.mjs",
     "test:e2e": "playwright test",
     "test:e2e:auth": "playwright test --config=playwright.auth.config.ts",
+    "test:e2e:sync": "playwright test --config=playwright.sync.config.ts",
     "format": "prettier --write src tests/e2e *.ts *.json",
     "preview": "vite preview --host 127.0.0.1"
   },
