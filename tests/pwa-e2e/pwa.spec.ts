@@ -144,10 +144,12 @@ test("Chromium parses an installable manifest and caches only the exact static s
     for (const name of await window.caches.keys()) {
       const cache = await window.caches.open(name);
       for (const request of await cache.keys()) {
+        const response = (await cache.match(request))!;
         entries.push({
           name,
           url: request.url,
-          body: await (await cache.match(request))!.text(),
+          redirected: response.redirected,
+          body: await response.text(),
         });
       }
     }
@@ -159,6 +161,7 @@ test("Chromium parses an installable manifest and caches only the exact static s
     expect(url.origin).toBe(origin);
     expect(url.search).toBe("");
     expect(url.hash).toBe("");
+    expect(entry.redirected).toBe(false);
     expect(url.pathname).toMatch(
       /^\/(__stride_shell_activated__|index\.html|manifest\.webmanifest|icons\/(stride\.svg|(?:192|512|180)x(?:192|512|180)\.png)|assets\/[^/]+\.(js|css|svg|png|webp|woff2?))$/,
     );
@@ -166,6 +169,9 @@ test("Chromium parses an installable manifest and caches only the exact static s
       /private-confirmation@example\.test|STRIDE_PRIVATE_RESPONSE_SENTINEL|PRIVATE_CALLBACK_SENTINEL/,
     );
   }
+  const onlineResponse = await page.reload();
+  expect(onlineResponse?.fromServiceWorker()).toBe(true);
+  await expect(page.locator(".auth-screen")).toBeVisible();
   await context.setOffline(true);
   await expect(
     page.evaluate(async () => fetch("/?code=PRIVATE_CALLBACK_SENTINEL")),
@@ -176,6 +182,11 @@ test("Chromium parses an installable manifest and caches only the exact static s
   const response = await page.reload();
   expect(response?.fromServiceWorker()).toBe(true);
   await expect(page.locator(".auth-screen")).toBeVisible();
+  const reopened = await context.newPage();
+  const reopenedResponse = await reopened.goto("/index.html");
+  expect(reopenedResponse?.fromServiceWorker()).toBe(true);
+  await expect(reopened.locator(".auth-screen")).toBeVisible();
+  await reopened.close();
 });
 
 test("the production shell reopens offline with account data, pending writes, and a paused timer; reconnect syncs and sign-out stays closed", async ({

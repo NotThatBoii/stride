@@ -18,6 +18,11 @@ const contentTypes = {
 createServer(async (request, response) => {
   const url = new URL(request.url, "http://127.0.0.1:1426");
   response.setHeader("cache-control", "no-store");
+  // Cloudflare Pages canonicalizes the shell URL before serving its HTML.
+  if (url.pathname === "/index.html") {
+    response.writeHead(308, { location: "/" + url.search }).end();
+    return;
+  }
   if (url.pathname === "/__test/worker" && request.method === "POST") {
     workerUnavailable = url.searchParams.get("unavailable") === "true";
     response.writeHead(204).end();

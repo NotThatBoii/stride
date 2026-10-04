@@ -23,6 +23,15 @@ self.addEventListener("install", (event) => {
       await cache.addAll([...STATIC_PATHS].map((path) => new Request(path, {
         credentials: "omit", mode: "same-origin", cache: "reload"
       })));
+      // Hosts can redirect /index.html to /. A followed redirect response
+      // cannot satisfy a navigation request whose redirect mode is manual.
+      // Preserve its static bytes and headers in a fresh, nonredirected response.
+      for (const path of STATIC_PATHS) {
+        const response = await cache.match(path);
+        if (response?.redirected) await cache.put(path, new Response(response.body, {
+          status: response.status, statusText: response.statusText, headers: response.headers
+        }));
+      }
       // Remove abandoned waiting builds while retaining activated shells.
       // This public lifecycle marker contains no account or study data.
       const names = (await caches.keys()).filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME);
