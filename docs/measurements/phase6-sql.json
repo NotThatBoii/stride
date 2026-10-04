@@ -1,0 +1,262 @@
+{
+  "measuredAt": "2026-10-04T04:42:12.226Z",
+  "runtime": "v22.17.1",
+  "platform": "win32",
+  "engine": "PGlite; unchanged checked-in Phase3 SQL; simulated auth.uid; one SQL connection; no HTTP",
+  "baselineDatabaseBytes": 7954555,
+  "assumptions": {
+    "subjects": 20,
+    "archivedSubjects": 2,
+    "sessionSeconds": 1800,
+    "noteCharacters": 100,
+    "midnightFraction": 0.2,
+    "pageSize": 100,
+    "edits": 0,
+    "deletes": 0
+  },
+  "measurements": [
+    {
+      "sessions": 100,
+      "allocations": 120,
+      "localJsonBytes": 46329,
+      "subjectJsonMeanBytes": 207.55,
+      "sessionJsonMeanBytes": 335,
+      "allocationJsonMeanBytes": 68.83333333333333,
+      "applyCalls": 121,
+      "applyRequestBytes": 69254,
+      "applyResponseBytes": 14343,
+      "applySegmentOperations": 121,
+      "applySegmentWallMs": 279.4652000000001,
+      "cumulativeApplyRpcMedianMs": 1.923699999999826,
+      "cumulativeApplyRpcP95Ms": 3.0891999999998916,
+      "initialPullCalls": 2,
+      "initialPullChanges": 121,
+      "initialPullRequestBytes": 60,
+      "initialPullResponseBytes": 68751,
+      "initialPullWallMs": 6.59089999999992,
+      "emptyPullResponseBytes": 46,
+      "tables": [
+        {
+          "table": "public.stride_subjects",
+          "rows": 20,
+          "tupleValueBytes": 3120,
+          "relationBytes": 32768,
+          "serializedRowBytes": 5171
+        },
+        {
+          "table": "public.stride_sessions",
+          "rows": 100,
+          "tupleValueBytes": 23200,
+          "relationBytes": 90112,
+          "serializedRowBytes": 38700
+        },
+        {
+          "table": "public.stride_allocations",
+          "rows": 120,
+          "tupleValueBytes": 8637,
+          "relationBytes": 65536,
+          "serializedRowBytes": 14260
+        },
+        {
+          "table": "public.stride_preferences",
+          "rows": 1,
+          "tupleValueBytes": 61,
+          "relationBytes": 32768,
+          "serializedRowBytes": 110
+        },
+        {
+          "table": "stride_private.stride_record_versions",
+          "rows": 121,
+          "tupleValueBytes": 11445,
+          "relationBytes": 65536,
+          "serializedRowBytes": 21336
+        },
+        {
+          "table": "stride_private.stride_sync_clocks",
+          "rows": 1,
+          "tupleValueBytes": 45,
+          "relationBytes": 24576,
+          "serializedRowBytes": 66
+        },
+        {
+          "table": "stride_private.stride_sync_changes",
+          "rows": 121,
+          "tupleValueBytes": 71568,
+          "relationBytes": 131072,
+          "serializedRowBytes": 79540
+        },
+        {
+          "table": "stride_private.stride_sync_operations",
+          "rows": 121,
+          "tupleValueBytes": 29024,
+          "relationBytes": 81920,
+          "serializedRowBytes": 43976
+        }
+      ],
+      "relationBytes": 524288,
+      "databaseBytes": 8347771
+    },
+    {
+      "sessions": 1000,
+      "allocations": 1200,
+      "localJsonBytes": 424149,
+      "subjectJsonMeanBytes": 207.55,
+      "sessionJsonMeanBytes": 335,
+      "allocationJsonMeanBytes": 68.83333333333333,
+      "applyCalls": 1021,
+      "applyRequestBytes": 622574,
+      "applyResponseBytes": 122365,
+      "applySegmentOperations": 900,
+      "applySegmentWallMs": 1562.6526999999999,
+      "cumulativeApplyRpcMedianMs": 1.666599999999562,
+      "cumulativeApplyRpcP95Ms": 2.2883999999999105,
+      "initialPullCalls": 11,
+      "initialPullChanges": 1021,
+      "initialPullRequestBytes": 340,
+      "initialPullResponseBytes": 618891,
+      "initialPullWallMs": 35.410799999999654,
+      "emptyPullResponseBytes": 47,
+      "tables": [
+        {
+          "table": "public.stride_subjects",
+          "rows": 20,
+          "tupleValueBytes": 3120,
+          "relationBytes": 32768,
+          "serializedRowBytes": 5171
+        },
+        {
+          "table": "public.stride_sessions",
+          "rows": 1000,
+          "tupleValueBytes": 232000,
+          "relationBytes": 376832,
+          "serializedRowBytes": 387000
+        },
+        {
+          "table": "public.stride_allocations",
+          "rows": 1200,
+          "tupleValueBytes": 86397,
+          "relationBytes": 221184,
+          "serializedRowBytes": 142600
+        },
+        {
+          "table": "public.stride_preferences",
+          "rows": 1,
+          "tupleValueBytes": 61,
+          "relationBytes": 32768,
+          "serializedRowBytes": 110
+        },
+        {
+          "table": "stride_private.stride_record_versions",
+          "rows": 1021,
+          "tupleValueBytes": 97845,
+          "relationBytes": 278528,
+          "serializedRowBytes": 180550
+        },
+        {
+          "table": "stride_private.stride_sync_clocks",
+          "rows": 1,
+          "tupleValueBytes": 45,
+          "relationBytes": 24576,
+          "serializedRowBytes": 67
+        },
+        {
+          "table": "stride_private.stride_sync_changes",
+          "rows": 1021,
+          "tupleValueBytes": 650448,
+          "relationBytes": 786432,
+          "serializedRowBytes": 710196
+        },
+        {
+          "table": "stride_private.stride_sync_operations",
+          "rows": 1021,
+          "tupleValueBytes": 245024,
+          "relationBytes": 360448,
+          "serializedRowBytes": 372412
+        }
+      ],
+      "relationBytes": 2113536,
+      "databaseBytes": 9937019
+    },
+    {
+      "sessions": 10000,
+      "allocations": 12000,
+      "localJsonBytes": 4202349,
+      "subjectJsonMeanBytes": 207.55,
+      "sessionJsonMeanBytes": 335,
+      "allocationJsonMeanBytes": 68.83333333333333,
+      "applyCalls": 10021,
+      "applyRequestBytes": 6155774,
+      "applyResponseBytes": 1211387,
+      "applySegmentOperations": 9000,
+      "applySegmentWallMs": 15243.936,
+      "cumulativeApplyRpcMedianMs": 1.6019999999989523,
+      "cumulativeApplyRpcP95Ms": 2.1784999999999854,
+      "initialPullCalls": 101,
+      "initialPullChanges": 10021,
+      "initialPullRequestBytes": 3221,
+      "initialPullResponseBytes": 6129165,
+      "initialPullWallMs": 315.8786,
+      "emptyPullResponseBytes": 48,
+      "tables": [
+        {
+          "table": "public.stride_subjects",
+          "rows": 20,
+          "tupleValueBytes": 3120,
+          "relationBytes": 32768,
+          "serializedRowBytes": 5171
+        },
+        {
+          "table": "public.stride_sessions",
+          "rows": 10000,
+          "tupleValueBytes": 2320000,
+          "relationBytes": 3162112,
+          "serializedRowBytes": 3870000
+        },
+        {
+          "table": "public.stride_allocations",
+          "rows": 12000,
+          "tupleValueBytes": 863997,
+          "relationBytes": 1679360,
+          "serializedRowBytes": 1426000
+        },
+        {
+          "table": "public.stride_preferences",
+          "rows": 1,
+          "tupleValueBytes": 61,
+          "relationBytes": 32768,
+          "serializedRowBytes": 110
+        },
+        {
+          "table": "stride_private.stride_record_versions",
+          "rows": 10021,
+          "tupleValueBytes": 961845,
+          "relationBytes": 2293760,
+          "serializedRowBytes": 1772588
+        },
+        {
+          "table": "stride_private.stride_sync_clocks",
+          "rows": 1,
+          "tupleValueBytes": 45,
+          "relationBytes": 24576,
+          "serializedRowBytes": 68
+        },
+        {
+          "table": "stride_private.stride_sync_changes",
+          "rows": 10021,
+          "tupleValueBytes": 6439248,
+          "relationBytes": 7299072,
+          "serializedRowBytes": 7025456
+        },
+        {
+          "table": "stride_private.stride_sync_operations",
+          "rows": 10021,
+          "tupleValueBytes": 2405200,
+          "relationBytes": 3039232,
+          "serializedRowBytes": 3665472
+        }
+      ],
+      "relationBytes": 17563648,
+      "databaseBytes": 25387131
+    }
+  ]
+}

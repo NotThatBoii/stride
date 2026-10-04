@@ -1,0 +1,208 @@
+{
+  "measuredAt": "2026-10-04T10:17:52.638Z",
+  "runtime": "v22.17.1",
+  "engine": "PGlite; unchanged checked-in Phase 3 SQL; simulated auth.uid; one SQL connection; no HTTP or hosted latency claim",
+  "method": "Seed 100 completed sessions; edit one session 100 times; explicitly delete/restore it 20 times using each acknowledged revision; replay the final identical operation 100 times. Original day allocations verified unchanged. Relation totals include indexes and allocated page overhead; tuple bytes exclude them.",
+  "measurements": [
+    {
+      "stage": "100 completed sessions, 120 allocations, 20 subjects, preferences",
+      "segmentWallMs": 277.7866999999999,
+      "cumulativeApplyCalls": 121,
+      "requestJsonBytes": 69254,
+      "responseJsonBytes": 14343,
+      "cursor": "121",
+      "tables": [
+        {
+          "table": "public.stride_sessions",
+          "rows": 100,
+          "tupleValueBytes": 23200,
+          "relationBytes": 90112
+        },
+        {
+          "table": "public.stride_allocations",
+          "rows": 120,
+          "tupleValueBytes": 8637,
+          "relationBytes": 65536
+        },
+        {
+          "table": "stride_private.stride_record_versions",
+          "rows": 121,
+          "tupleValueBytes": 11445,
+          "relationBytes": 65536
+        },
+        {
+          "table": "stride_private.stride_sync_changes",
+          "rows": 121,
+          "tupleValueBytes": 71568,
+          "relationBytes": 131072
+        },
+        {
+          "table": "stride_private.stride_sync_operations",
+          "rows": 121,
+          "tupleValueBytes": 29024,
+          "relationBytes": 81920
+        }
+      ]
+    },
+    {
+      "stage": "10 successive edits to one session",
+      "segmentWallMs": 30.44489999999996,
+      "cumulativeApplyCalls": 131,
+      "requestJsonBytes": 75945,
+      "responseJsonBytes": 15545,
+      "cursor": "131",
+      "tables": [
+        {
+          "table": "public.stride_sessions",
+          "rows": 100,
+          "tupleValueBytes": 23200,
+          "relationBytes": 90112
+        },
+        {
+          "table": "public.stride_allocations",
+          "rows": 120,
+          "tupleValueBytes": 8637,
+          "relationBytes": 65536
+        },
+        {
+          "table": "stride_private.stride_record_versions",
+          "rows": 121,
+          "tupleValueBytes": 11445,
+          "relationBytes": 65536
+        },
+        {
+          "table": "stride_private.stride_sync_changes",
+          "rows": 131,
+          "tupleValueBytes": 78768,
+          "relationBytes": 139264
+        },
+        {
+          "table": "stride_private.stride_sync_operations",
+          "rows": 131,
+          "tupleValueBytes": 31424,
+          "relationBytes": 81920
+        }
+      ]
+    },
+    {
+      "stage": "100 successive edits to one session",
+      "segmentWallMs": 197.52710000000002,
+      "cumulativeApplyCalls": 221,
+      "requestJsonBytes": 136246,
+      "responseJsonBytes": 26437,
+      "cursor": "221",
+      "tables": [
+        {
+          "table": "public.stride_sessions",
+          "rows": 100,
+          "tupleValueBytes": 23200,
+          "relationBytes": 90112
+        },
+        {
+          "table": "public.stride_allocations",
+          "rows": 120,
+          "tupleValueBytes": 8637,
+          "relationBytes": 65536
+        },
+        {
+          "table": "stride_private.stride_record_versions",
+          "rows": 121,
+          "tupleValueBytes": 11445,
+          "relationBytes": 65536
+        },
+        {
+          "table": "stride_private.stride_sync_changes",
+          "rows": 221,
+          "tupleValueBytes": 143568,
+          "relationBytes": 204800
+        },
+        {
+          "table": "stride_private.stride_sync_operations",
+          "rows": 221,
+          "tupleValueBytes": 53040,
+          "relationBytes": 122880
+        }
+      ]
+    },
+    {
+      "stage": "100 edits plus 20 delete/restore cycles",
+      "segmentWallMs": 70.32080000000019,
+      "cumulativeApplyCalls": 261,
+      "requestJsonBytes": 153226,
+      "responseJsonBytes": 31317,
+      "cursor": "261",
+      "tables": [
+        {
+          "table": "public.stride_sessions",
+          "rows": 100,
+          "tupleValueBytes": 23200,
+          "relationBytes": 90112
+        },
+        {
+          "table": "public.stride_allocations",
+          "rows": 120,
+          "tupleValueBytes": 8637,
+          "relationBytes": 65536
+        },
+        {
+          "table": "stride_private.stride_record_versions",
+          "rows": 121,
+          "tupleValueBytes": 11445,
+          "relationBytes": 65536
+        },
+        {
+          "table": "stride_private.stride_sync_changes",
+          "rows": 261,
+          "tupleValueBytes": 160528,
+          "relationBytes": 237568
+        },
+        {
+          "table": "stride_private.stride_sync_operations",
+          "rows": 261,
+          "tupleValueBytes": 62960,
+          "relationBytes": 131072
+        }
+      ]
+    },
+    {
+      "stage": "100 exact UUID/body replays of the final accepted restore",
+      "segmentWallMs": 117.63760000000002,
+      "cumulativeApplyCalls": 361,
+      "requestJsonBytes": 220326,
+      "responseJsonBytes": 43517,
+      "cursor": "261",
+      "tables": [
+        {
+          "table": "public.stride_sessions",
+          "rows": 100,
+          "tupleValueBytes": 23200,
+          "relationBytes": 90112
+        },
+        {
+          "table": "public.stride_allocations",
+          "rows": 120,
+          "tupleValueBytes": 8637,
+          "relationBytes": 65536
+        },
+        {
+          "table": "stride_private.stride_record_versions",
+          "rows": 121,
+          "tupleValueBytes": 11445,
+          "relationBytes": 65536
+        },
+        {
+          "table": "stride_private.stride_sync_changes",
+          "rows": 261,
+          "tupleValueBytes": 160528,
+          "relationBytes": 237568
+        },
+        {
+          "table": "stride_private.stride_sync_operations",
+          "rows": 261,
+          "tupleValueBytes": 62960,
+          "relationBytes": 131072
+        }
+      ]
+    }
+  ]
+}

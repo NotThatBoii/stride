@@ -7,11 +7,11 @@ import {
   enqueueOperation,
   initialize,
   readData,
-  restoreData,
   StrideDatabase,
 } from "../../src/lib/local-database";
 import { createSyncAdapter } from "../../src/lib/sync/client";
 import { SyncWorker } from "../../src/lib/sync/worker";
+import { stageImport, commitImport } from "../../src/lib/sync/import";
 
 // This suite is launched only by the local-stack runner. Real SDK Auth and
 // PostgREST requests use disposable users; IndexedDB devices are independent.
@@ -229,7 +229,10 @@ describe("real local Supabase SDK Auth, adapter, and sync worker", () => {
   });
 
   it("pushes and pulls subjects, complete sessions, allocations and shared settings", async () => {
-    await restoreData(history, a.db);
+    await a.worker.runExclusive(async (db, guard) => {
+      const stage = await stageImport(db, history, "backup", guard);
+      await commitImport(db, stage.id, guard);
+    });
     await sync(a);
     await sync(b);
     const received = await readData(b.db);
@@ -295,13 +298,18 @@ describe("real local Supabase SDK Auth, adapter, and sync worker", () => {
   it("isolates a second real authenticated account and denies anonymous RPCs", async () => {
     const other = await device(second);
     expect((await readData(other.db)).subjects).toHaveLength(0);
-    await restoreData(
-      {
-        ...history,
-        subjects: [{ ...subject, name: "Second account history" }],
-      },
-      other.db,
-    );
+    await other.worker.runExclusive(async (db, guard) => {
+      const stage = await stageImport(
+        db,
+        {
+          ...history,
+          subjects: [{ ...subject, name: "Second account history" }],
+        },
+        "backup",
+        guard,
+      );
+      await commitImport(db, stage.id, guard);
+    });
     await sync(other);
     expect((await readData(a.db)).subjects[0].name).toBe(
       "Device A committed version",

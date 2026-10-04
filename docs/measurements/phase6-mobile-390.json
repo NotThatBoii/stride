@@ -1,0 +1,125 @@
+{
+  "width": 390,
+  "engine": "Microsoft Edge, emulated mobile-width viewport; no physical handset",
+  "measurements": [
+    {
+      "view": "authentication",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "onboarding-subjects",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "onboarding-minimum",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "dashboard",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "subjects",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "subject-detail",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "focus-ready",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "focus-running",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "focus-paused",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "history",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "insights",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "settings",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "conflict-recovery",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "pending-changes",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "legacy-offer",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "legacy-review",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    },
+    {
+      "view": "legacy-backed-up",
+      "viewport": 390,
+      "document": 390,
+      "smallButtons": [],
+      "overflows": []
+    }
+  ]
+}

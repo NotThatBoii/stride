@@ -14,6 +14,7 @@ import { formatTime } from "../lib/analytics";
 import { syncLabel, useSync } from "../sync/SyncProvider";
 import { LegacyImport, HistoryImportDialog } from "./HistoryImport";
 import { getImportState, type ImportStage } from "../lib/sync/import";
+import RecoveryCenter from "./RecoveryCenter";
 
 function VersionPreview({
   conflict,
@@ -110,6 +111,7 @@ export default function SyncPanel() {
       <section
         className="panel settings-section sync-panel"
         aria-label="Cloud synchronization"
+        id="sync-review"
       >
         <div className="row">
           <div>
@@ -243,6 +245,7 @@ export default function SyncPanel() {
           </div>
         )}
       </section>
+      <RecoveryCenter />
       <LegacyImport settings />
       {resume && staged && (
         <HistoryImportDialog

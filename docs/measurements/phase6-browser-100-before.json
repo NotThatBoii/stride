@@ -1,0 +1,191 @@
+{
+  "measuredAt": "2026-10-04T04:47:14.691Z",
+  "sessions": 100,
+  "allocations": 120,
+  "browser": "chromium",
+  "version": "154.0.4258.53",
+  "mode": "Production minified build on loopback; synthetic account IndexedDB; intercepted Auth and 503 cloud; service workers blocked; no hosted latency or packaged-native claim.",
+  "seed": {
+    "existingDatabaseOpenMs": 1,
+    "seedWriteMs": 7
+  },
+  "startup": {
+    "readyAt": 177.19999992847443,
+    "longTasks": [],
+    "databaseTransactions": [
+      {
+        "stores": [
+          "conflicts",
+          "meta",
+          "pendingOperations",
+          "preferences",
+          "recordRevisions",
+          "recoveryCopies",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncCursors",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.8999999761581421
+      },
+      {
+        "stores": [
+          "meta",
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readwrite",
+        "durationMs": 0.6000000238418579
+      },
+      {
+        "stores": [
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 17.800000071525574
+      },
+      {
+        "stores": [
+          "pendingOperations"
+        ],
+        "mode": "readonly",
+        "durationMs": 7.599999904632568
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 7.5
+      },
+      {
+        "stores": [
+          "conflicts"
+        ],
+        "mode": "readonly",
+        "durationMs": 1.100000023841858
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.7999999523162842
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 14.899999976158142
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 15.100000023841858
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 14.700000047683716
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.5
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.8000000715255737
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 1.1999999284744263
+      },
+      {
+        "stores": [
+          "conflicts",
+          "meta",
+          "pendingOperations",
+          "preferences",
+          "recordRevisions",
+          "recoveryCopies",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncCursors",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.5999999046325684
+      },
+      {
+        "stores": [
+          "meta",
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readwrite",
+        "durationMs": 0.3999999761581421
+      },
+      {
+        "stores": [
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 1.6999999284744263
+      }
+    ],
+    "databaseQueries": {
+      "store.get": 14,
+      "index.getAll": 4,
+      "store.getAll": 3,
+      "store.openCursor": 2
+    },
+    "navigation": [
+      {
+        "duration": 64,
+        "domContentLoaded": 63.89999997615814
+      }
+    ]
+  },
+  "historyNavigationMs": 233,
+  "insightsNavigationMs": 39,
+  "dashboardNavigationMs": 44,
+  "longTasksAfterNavigationAndThreeIdleSeconds": [],
+  "idleLongTasksMs": [],
+  "authenticationHttpRequests": 1,
+  "syncHttpRequests": 2
+}

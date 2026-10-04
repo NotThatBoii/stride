@@ -4,6 +4,8 @@
 
 Stride is a study tracker for Windows and the web, built around subjects, real study sessions, streaks, and GitHub-style contribution heatmaps. A Supabase email/password account is required to enter the app. Study data saves immediately to an account-scoped IndexedDB workspace and synchronizes completed history and shared study preferences across signed-in devices. Conflicting versions are preserved for review.
 
+Phase 6 adds a static offline PWA shell, explicit update controls, a Recovery and sync issues area, mobile fixes, and measured large-history hardening. See [the Phase 6 release report](docs/PHASE_6_HARDENING.md) for exact local/CI/native/hosted results and remaining release gates. Its retention policy is a proposal; history and operation receipts are not automatically pruned.
+
 ## Windows app — no local server required
 
 **[Download Stride for Windows](https://github.com/NotThatBoii/stride/releases/latest)** — choose the Windows setup executable under Assets, run it, and open Stride from Start. Share that release link with friends; no GitHub account is needed to download from this public repository. Published releases may predate the account-required entry flow described here.
@@ -20,7 +22,7 @@ JSON backups remain available through **Settings → Export JSON** and **Import 
 
 Install the [Tauri Windows prerequisites](https://v2.tauri.app/start/prerequisites/): stable Rust, Visual Studio C++ Build Tools, a Windows SDK, and WebView2.
 
-Configure the public Supabase variables described in [authentication setup](docs/PHASE_4_AUTH.md#local-setup) before building. Vite embeds them in the Windows executable; a build with missing or invalid configuration displays a configuration error and cannot open a study workspace. Release CI must supply the same public variables at build time.
+The Windows build wrapper supplies the intended already-public project URL/publishable key from `config/supabase-public.json`, or validates the matching public environment variables described in [authentication setup](docs/PHASE_4_AUTH.md#local-setup). It rejects private keys/foreign projects and checks the embedded frontend before publishing a build artifact. The narrow Tauri CSP is preserved.
 
 ```powershell
 npm.cmd ci --legacy-peer-deps
@@ -94,7 +96,7 @@ npm run format    # Format source, tests, and configuration
 
 Playwright tests use installed Microsoft Edge and fresh browser contexts. The restart test uses a temporary profile under ignored `test-results/`. Tests do not modify your actual browser workspace. Auth browser tests intercept Supabase requests. Sync browser tests use separate device contexts and route intercepted RPCs through the checked-in SQL in isolated PGlite. The integration suite uses real Auth/PostgREST with disposable local users and refuses a hosted URL. See [Phase 5 verification and its limits](docs/PHASE_5_SYNC.md#verification-and-evidence) for the executed environments and hosted verification report.
 
-Web production output is generated in `dist/` and can be served by a static web host. Public Supabase configuration is required at build time for both web and desktop. The web version has no service worker, so opening/reloading it requires its files to be reachable. The desktop build embeds those files and can open the authentication screen offline; workspace access still follows Supabase session restoration.
+Web production output is generated in `dist/` and can be served by a static web host. The web and Windows build wrappers validate and supply the intended public Supabase release configuration from the checked-in public fallback or matching environment values. Development still requires its explicit configuration. A successfully prepared production web app can reopen its cached static shell offline. Study data remains in account-scoped IndexedDB, and Supabase/Auth/API responses are never cached by the worker. First sign-in or a session requiring refresh still needs a connection. The desktop embeds its files and does not register the web worker. See [PWA lifecycle and installation limits](docs/PHASE_6_PWA.md).
 
 ## Data storage and safety
 
@@ -137,8 +139,8 @@ Navigation remains the existing React view-state implementation. The top-level a
 
 ## Roadmap
 
-- Installable web app and offline application-shell caching.
-- Packaged Windows synchronization verification, fuller recovery tools, and a safe change-log retention policy.
+- Close the remaining native, hosted-email, and physical PWA release gates recorded in Phase 6.
+- Implement a separately approved stale-device recovery protocol before any change-log or receipt retention policy is activated.
 - Optional encrypted backup.
 - Per-subject goals and additional keyboard commands.
 - More browsers and accessibility checks in CI.

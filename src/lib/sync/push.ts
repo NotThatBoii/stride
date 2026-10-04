@@ -6,6 +6,8 @@ import {
   readLocalVersion,
 } from "./conflicts";
 import { compareRevision, normalizeOperation } from "./normalization";
+import { operationErrorKey, preserveOperationFailure } from "./failures";
+import { containsRecoveryBlob } from "./recovery-export";
 import {
   SyncError,
   type SyncAdapter,
@@ -13,15 +15,12 @@ import {
   type WireOperation,
 } from "./types";
 
-export async function clearOperationErrors(db: StrideDatabase): Promise<void> {
-  await db.syncMetadata.where("key").startsWith("op_error:").delete();
-}
 async function canSend(
   db: StrideDatabase,
   operation: PendingOperation,
   all: PendingOperation[],
 ): Promise<boolean> {
-  if (await db.syncMetadata.get(`op_error:${operation.id}`)) return false;
+  if (await db.syncMetadata.get(operationErrorKey(operation))) return false;
   if (
     all.some(
       (other) =>
@@ -33,7 +32,7 @@ async function canSend(
     return false;
   // Unknown acknowledgements must be settled with their original request,
   // including when a subsequent pull has discovered a conflicting version.
-  if (operation.status === "in_flight") return true;
+  if (operation.status === "in_flight" || operation.wire_request) return true;
   if (await hasUnresolvedConflict(db, operation.entity, operation.record_id))
     return false;
   if (operation.entity === "session" && operation.action === "upsert") {
@@ -104,11 +103,60 @@ export async function pushPending(
       throw new SyncError("Synchronization stopped.", "cancelled");
     const all = await db.pendingOperations.orderBy("sequence").toArray();
     let candidate: PendingOperation | undefined;
-    for (const operation of all)
+    for (const operation of all) {
+      if (await db.syncMetadata.get(operationErrorKey(operation))) continue;
+      try {
+        if (!["pending", "in_flight"].includes(operation.status))
+          throw new SyncError(
+            "A stored change has an invalid state.",
+            "permanent",
+          );
+        if (containsRecoveryBlob(operation))
+          throw new SyncError(
+            "A stored change contains unreadable file data. Its bytes remain available for recovery export.",
+            "permanent",
+          );
+        normalizeOperation(operation.wire_request ?? operation);
+        if (
+          operation.wire_request &&
+          (operation.wire_request.id !== operation.id ||
+            operation.wire_request.entity !== operation.entity ||
+            operation.wire_request.record_id !== operation.record_id ||
+            operation.wire_request.action !== operation.action)
+        )
+          throw new SyncError(
+            "A stored request does not match its change.",
+            "permanent",
+          );
+      } catch (error) {
+        if (!(error instanceof SyncError)) throw error;
+        await db.transaction(
+          "rw",
+          db.pendingOperations,
+          db.syncMetadata,
+          db.recoveryCopies,
+          async () => {
+            guard();
+            const current = await db.pendingOperations.get(operation.sequence!);
+            if (current)
+              await preserveOperationFailure(
+                db,
+                current,
+                error,
+                current.wire_request || current.status !== "pending"
+                  ? "local_corruption"
+                  : "local_validation",
+              );
+            guard();
+          },
+        );
+        continue;
+      }
       if (await canSend(db, operation, all)) {
         candidate = operation;
         break;
       }
+    }
     if (!candidate) {
       result.blocked = all.length;
       break;
@@ -126,7 +174,7 @@ export async function pushPending(
           const frozen = current.wire_request ?? normalizeOperation(current);
           // A claimed request remains exactly as stored, even after restart or
           // a timezone change. Later local edits create another operation.
-          if (!current.wire_request)
+          if (!current.wire_request || current.status !== "in_flight")
             await db.pendingOperations.put({
               ...current,
               status: "in_flight",
@@ -245,19 +293,32 @@ export async function pushPending(
         (error.kind === "permanent" || error.kind === "malformed")
       ) {
         guard();
-        await db.transaction("rw", db.syncMetadata, async () => {
-          guard();
-          await db.syncMetadata.put({
-            key: `op_error:${candidate!.id}`,
-            value: JSON.stringify({
-              kind: error.kind,
-              message: error.message,
-              at: new Date().toISOString(),
-              definitiveNoCommit: error.definitiveNoCommit,
-            }),
-          });
-          guard();
-        });
+        await db.transaction(
+          "rw",
+          db.pendingOperations,
+          db.syncMetadata,
+          db.recoveryCopies,
+          async () => {
+            guard();
+            const current = await db.pendingOperations.get(
+              candidate!.sequence!,
+            );
+            if (current)
+              await preserveOperationFailure(
+                db,
+                current,
+                error,
+                error.definitiveNoCommit
+                  ? "server_rejection"
+                  : wire
+                    ? error.kind === "malformed"
+                      ? "invalid_response"
+                      : "server_rejection"
+                    : "local_validation",
+              );
+            guard();
+          },
+        );
         result.blocked++;
         continue;
       }

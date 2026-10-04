@@ -21,6 +21,7 @@ import {
   normalizePayload,
 } from "./normalization";
 import type { SyncGuard, SyncVersion } from "./types";
+import { operationErrorKey, parseOperationFailure } from "./failures";
 
 export type ConflictChoice = "local" | "remote" | "both";
 export interface ConflictInput {
@@ -389,7 +390,7 @@ async function removeOperations(
     .equals([entity, recordId])
     .toArray();
   for (const operation of operations) {
-    if (operation.status === "in_flight") {
+    if (operation.status === "in_flight" || operation.wire_request) {
       if (!(await definitiveRejection(db, operation)))
         throw new Error(
           "Sync must confirm the submitted change before resolving this conflict. Try Sync now first.",
@@ -401,13 +402,13 @@ async function removeOperations(
         record_id: recordId,
         snapshot: {
           operation,
-          rejection: (await db.syncMetadata.get(`op_error:${operation.id}`))
+          rejection: (await db.syncMetadata.get(operationErrorKey(operation)))
             ?.value,
         },
         created_at: new Date().toISOString(),
       });
     }
-    await db.syncMetadata.delete(`op_error:${operation.id}`);
+    await db.syncMetadata.delete(operationErrorKey(operation));
   }
   await db.pendingOperations.bulkDelete(
     operations.map((operation) => operation.sequence!),
@@ -418,13 +419,8 @@ async function definitiveRejection(
   db: StrideDatabase,
   operation: PendingOperation,
 ): Promise<boolean> {
-  const metadata = await db.syncMetadata.get(`op_error:${operation.id}`);
-  if (!metadata) return false;
-  try {
-    return JSON.parse(metadata.value).definitiveNoCommit === true;
-  } catch {
-    return false;
-  }
+  const metadata = await db.syncMetadata.get(operationErrorKey(operation));
+  return parseOperationFailure(metadata?.value)?.definitiveNoCommit === true;
 }
 
 async function childMovedOutsideSubject(
@@ -738,7 +734,7 @@ export async function resolveConflict(
             parentId({ payload: operation.payload }) === conflict.record_id));
       if (
         related &&
-        operation.status === "in_flight" &&
+        (operation.status === "in_flight" || operation.wire_request) &&
         !(await definitiveRejection(db, operation))
       )
         throw new Error(

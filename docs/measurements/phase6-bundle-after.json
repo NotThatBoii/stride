@@ -1,0 +1,967 @@
+{
+  "measuredAt": "2026-10-04T10:18:27.985Z",
+  "runtime": "v22.17.1",
+  "note": "Production minified JS sizes are exact; module/package renderedLength is BEFORE final minification and cannot be equated to compressed/minified attribution. Test-only public configuration; no code or credentials recorded.",
+  "initialJsBytes": 727332,
+  "initialJsGzipBytes": 212330,
+  "totalJsBytes": 825361,
+  "totalJsGzipBytes": 244668,
+  "assets": [
+    {
+      "file": "assets/index-tmmtOnS3.css",
+      "bytes": 41755,
+      "gzipBytes": 9197
+    },
+    {
+      "file": "assets/Settings-DijdQJ2h.css",
+      "bytes": 1135,
+      "gzipBytes": 431
+    },
+    {
+      "file": "index.html",
+      "bytes": 768,
+      "gzipBytes": 419
+    },
+    {
+      "file": "sw.js",
+      "bytes": 3990,
+      "gzipBytes": 1592
+    }
+  ],
+  "groups": [
+    {
+      "name": "react-dom",
+      "renderedBytesBeforeMinification": 653699
+    },
+    {
+      "name": "@supabase/auth-js",
+      "renderedBytesBeforeMinification": 406786
+    },
+    {
+      "name": "application",
+      "renderedBytesBeforeMinification": 312687
+    },
+    {
+      "name": "zod",
+      "renderedBytesBeforeMinification": 242265
+    },
+    {
+      "name": "@supabase/storage-js",
+      "renderedBytesBeforeMinification": 113418
+    },
+    {
+      "name": "@supabase/postgrest-js",
+      "renderedBytesBeforeMinification": 110867
+    },
+    {
+      "name": "@supabase/realtime-js",
+      "renderedBytesBeforeMinification": 99494
+    },
+    {
+      "name": "dexie",
+      "renderedBytesBeforeMinification": 97886
+    },
+    {
+      "name": "@supabase/phoenix",
+      "renderedBytesBeforeMinification": 56053
+    },
+    {
+      "name": "@supabase/supabase-js",
+      "renderedBytesBeforeMinification": 38299
+    },
+    {
+      "name": "react",
+      "renderedBytesBeforeMinification": 21175
+    },
+    {
+      "name": "@supabase/functions-js",
+      "renderedBytesBeforeMinification": 16658
+    },
+    {
+      "name": "iceberg-js",
+      "renderedBytesBeforeMinification": 15836
+    },
+    {
+      "name": "lucide-react",
+      "renderedBytesBeforeMinification": 13804
+    },
+    {
+      "name": "scheduler",
+      "renderedBytesBeforeMinification": 11420
+    },
+    {
+      "name": "@tauri-apps/plugin-fs",
+      "renderedBytesBeforeMinification": 8458
+    },
+    {
+      "name": "@tauri-apps/api",
+      "renderedBytesBeforeMinification": 7573
+    },
+    {
+      "name": "@tauri-apps/plugin-notification",
+      "renderedBytesBeforeMinification": 5258
+    },
+    {
+      "name": "runtime/virtual",
+      "renderedBytesBeforeMinification": 3820
+    },
+    {
+      "name": "@tauri-apps/plugin-dialog",
+      "renderedBytesBeforeMinification": 2767
+    },
+    {
+      "name": "tslib",
+      "renderedBytesBeforeMinification": 2160
+    }
+  ],
+  "chunks": [
+    {
+      "file": "assets/index-DFRkepaa.js",
+      "entry": true,
+      "staticImports": [],
+      "dynamicImports": [
+        "assets/index-B9SpVBY9.js",
+        "assets/index-B9SpVBY9.js",
+        "assets/index-CAiN1RoV.js",
+        "assets/index-uKDfpPCc.js",
+        "assets/index-CAiN1RoV.js",
+        "assets/index-uKDfpPCc.js",
+        "assets/App-CMz2xU7T.js"
+      ],
+      "bytes": 727332,
+      "gzipBytes": 212330,
+      "brotliBytes": 180932,
+      "modules": [
+        {
+          "path": "node_modules/react-dom/cjs/react-dom-client.production.js",
+          "renderedBytesBeforeMinification": 644593
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/GoTrueClient.js",
+          "renderedBytesBeforeMinification": 271500
+        },
+        {
+          "path": "node_modules/@supabase/storage-js/dist/index.mjs",
+          "renderedBytesBeforeMinification": 113418
+        },
+        {
+          "path": "node_modules/@supabase/postgrest-js/dist/index.mjs",
+          "renderedBytesBeforeMinification": 110867
+        },
+        {
+          "path": "node_modules/dexie/dist/dexie.min.js",
+          "renderedBytesBeforeMinification": 97094
+        },
+        {
+          "path": "node_modules/zod/v4/core/schemas.js",
+          "renderedBytesBeforeMinification": 64003
+        },
+        {
+          "path": "node_modules/@supabase/phoenix/priv/static/phoenix.mjs",
+          "renderedBytesBeforeMinification": 56053
+        },
+        {
+          "path": "node_modules/@supabase/supabase-js/dist/index.mjs",
+          "renderedBytesBeforeMinification": 38040
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/GoTrueAdminApi.js",
+          "renderedBytesBeforeMinification": 35915
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/RealtimeChannel.js",
+          "renderedBytesBeforeMinification": 34155
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/webauthn.js",
+          "renderedBytesBeforeMinification": 33724
+        },
+        {
+          "path": "node_modules/zod/v4/classic/schemas.js",
+          "renderedBytesBeforeMinification": 30197
+        },
+        {
+          "path": "node_modules/zod/v4/core/to-json-schema.js",
+          "renderedBytesBeforeMinification": 28546
+        },
+        {
+          "path": "src/lib/sync/conflicts.ts",
+          "renderedBytesBeforeMinification": 27329
+        },
+        {
+          "path": "node_modules/zod/v4/core/util.js",
+          "renderedBytesBeforeMinification": 26815
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/RealtimeClient.js",
+          "renderedBytesBeforeMinification": 26019
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/helpers.js",
+          "renderedBytesBeforeMinification": 21820
+        },
+        {
+          "path": "node_modules/react/cjs/react.production.js",
+          "renderedBytesBeforeMinification": 19185
+        },
+        {
+          "path": "node_modules/zod/v4/core/json-schema-processors.js",
+          "renderedBytesBeforeMinification": 18776
+        },
+        {
+          "path": "node_modules/iceberg-js/dist/index.mjs",
+          "renderedBytesBeforeMinification": 15836
+        },
+        {
+          "path": "node_modules/@supabase/functions-js/dist/module/FunctionsClient.js",
+          "renderedBytesBeforeMinification": 13801
+        },
+        {
+          "path": "node_modules/zod/v4/core/checks.js",
+          "renderedBytesBeforeMinification": 13113
+        },
+        {
+          "path": "node_modules/zod/v4/core/api.js",
+          "renderedBytesBeforeMinification": 12551
+        },
+        {
+          "path": "src/lib/local-database.ts",
+          "renderedBytesBeforeMinification": 12060
+        },
+        {
+          "path": "node_modules/zod/v4/core/memoizer.js",
+          "renderedBytesBeforeMinification": 11767
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/webauthn.errors.js",
+          "renderedBytesBeforeMinification": 11221
+        },
+        {
+          "path": "node_modules/scheduler/cjs/scheduler.production.js",
+          "renderedBytesBeforeMinification": 11134
+        },
+        {
+          "path": "src/auth/auth-session.ts",
+          "renderedBytesBeforeMinification": 11042
+        },
+        {
+          "path": "src/lib/sync/worker.ts",
+          "renderedBytesBeforeMinification": 10864
+        },
+        {
+          "path": "src/lib/sync/client.ts",
+          "renderedBytesBeforeMinification": 9307
+        },
+        {
+          "path": "src/lib/sync/push.ts",
+          "renderedBytesBeforeMinification": 9125
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/errors.js",
+          "renderedBytesBeforeMinification": 8566
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/fetch.js",
+          "renderedBytesBeforeMinification": 8241
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/lib/transformers.js",
+          "renderedBytesBeforeMinification": 8171
+        },
+        {
+          "path": "src/lib/sync/pull.ts",
+          "renderedBytesBeforeMinification": 8137
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/base64url.js",
+          "renderedBytesBeforeMinification": 7936
+        },
+        {
+          "path": "node_modules/react-dom/cjs/react-dom.production.js",
+          "renderedBytesBeforeMinification": 7918
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/lib/serializer.js",
+          "renderedBytesBeforeMinification": 7562
+        },
+        {
+          "path": "src/components/AuthenticationScreen.tsx",
+          "renderedBytesBeforeMinification": 7303
+        },
+        {
+          "path": "node_modules/zod/v4/core/parse.js",
+          "renderedBytesBeforeMinification": 7090
+        },
+        {
+          "path": "node_modules/zod/v4/core/errors.js",
+          "renderedBytesBeforeMinification": 6281
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/RealtimePostgresFilterBuilder.js",
+          "renderedBytesBeforeMinification": 6276
+        },
+        {
+          "path": "node_modules/zod/v4/core/core.js",
+          "renderedBytesBeforeMinification": 6257
+        },
+        {
+          "path": "node_modules/zod/v4/core/regexes.js",
+          "renderedBytesBeforeMinification": 5841
+        },
+        {
+          "path": "src/lib/pwa.ts",
+          "renderedBytesBeforeMinification": 5734
+        },
+        {
+          "path": "node_modules/zod/v4/locales/en.js",
+          "renderedBytesBeforeMinification": 5228
+        },
+        {
+          "path": "src/lib/sync/recovery-export.ts",
+          "renderedBytesBeforeMinification": 4721
+        },
+        {
+          "path": "src/lib/validation.ts",
+          "renderedBytesBeforeMinification": 4592
+        },
+        {
+          "path": "src/lib/sync/normalization.ts",
+          "renderedBytesBeforeMinification": 4578
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js",
+          "renderedBytesBeforeMinification": 4312
+        },
+        {
+          "path": "src/components/Pwa.tsx",
+          "renderedBytesBeforeMinification": 3687
+        },
+        {
+          "path": "src/state.tsx",
+          "renderedBytesBeforeMinification": 3565
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/phoenix/presenceAdapter.js",
+          "renderedBytesBeforeMinification": 3394
+        },
+        {
+          "path": "src/lib/sync/failures.ts",
+          "renderedBytesBeforeMinification": 3259
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/web3/ethereum.js",
+          "renderedBytesBeforeMinification": 3043
+        },
+        {
+          "path": "src/lib/platform.ts",
+          "renderedBytesBeforeMinification": 2999
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/phoenix/channelAdapter.js",
+          "renderedBytesBeforeMinification": 2891
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/phoenix/socketAdapter.js",
+          "renderedBytesBeforeMinification": 2761
+        },
+        {
+          "path": "node_modules/@supabase/functions-js/dist/module/types.js",
+          "renderedBytesBeforeMinification": 2694
+        },
+        {
+          "path": "node_modules/zod/v4/classic/errors.js",
+          "renderedBytesBeforeMinification": 2284
+        },
+        {
+          "path": "\u0000vite/preload-helper.js",
+          "renderedBytesBeforeMinification": 2206
+        },
+        {
+          "path": "node_modules/tslib/tslib.es6.mjs",
+          "renderedBytesBeforeMinification": 2160
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/constants.js",
+          "renderedBytesBeforeMinification": 1932
+        },
+        {
+          "path": "src/lib/sync/bootstrap.ts",
+          "renderedBytesBeforeMinification": 1901
+        },
+        {
+          "path": "src/lib/supabase.ts",
+          "renderedBytesBeforeMinification": 1569
+        },
+        {
+          "path": "src/sync/SyncProvider.tsx",
+          "renderedBytesBeforeMinification": 1568
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/RealtimePresence.js",
+          "renderedBytesBeforeMinification": 1409
+        },
+        {
+          "path": "node_modules/zod/v4/core/registries.js",
+          "renderedBytesBeforeMinification": 1404
+        },
+        {
+          "path": "src/auth/AuthProvider.tsx",
+          "renderedBytesBeforeMinification": 1386
+        },
+        {
+          "path": "node_modules/react/cjs/react-jsx-runtime.production.js",
+          "renderedBytesBeforeMinification": 1294
+        },
+        {
+          "path": "node_modules/zod/v4/core/doc.js",
+          "renderedBytesBeforeMinification": 1282
+        },
+        {
+          "path": "\u0000vite/modulepreload-polyfill.js",
+          "renderedBytesBeforeMinification": 1280
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/locks.js",
+          "renderedBytesBeforeMinification": 1271
+        },
+        {
+          "path": "node_modules/@tauri-apps/api/core.js",
+          "renderedBytesBeforeMinification": 1263
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/lib/normalizeChannelError.js",
+          "renderedBytesBeforeMinification": 1111
+        },
+        {
+          "path": "node_modules/@tauri-apps/api/external/tslib/tslib.es6.js",
+          "renderedBytesBeforeMinification": 1111
+        },
+        {
+          "path": "src/auth/AuthGate.tsx",
+          "renderedBytesBeforeMinification": 1066
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/lib/constants.js",
+          "renderedBytesBeforeMinification": 991
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/Icon.js",
+          "renderedBytesBeforeMinification": 899
+        },
+        {
+          "path": "src/main.tsx",
+          "renderedBytesBeforeMinification": 839
+        },
+        {
+          "path": "node_modules/zod/v4/classic/parse.js",
+          "renderedBytesBeforeMinification": 766
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/polyfills.js",
+          "renderedBytesBeforeMinification": 698
+        },
+        {
+          "path": "node_modules/dexie/import-wrapper-prod.mjs",
+          "renderedBytesBeforeMinification": 647
+        },
+        {
+          "path": "src/lib/timer.ts",
+          "renderedBytesBeforeMinification": 639
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/createLucideIcon.js",
+          "renderedBytesBeforeMinification": 538
+        },
+        {
+          "path": "node_modules/react-dom/index.js",
+          "renderedBytesBeforeMinification": 520
+        },
+        {
+          "path": "node_modules/react-dom/client.js",
+          "renderedBytesBeforeMinification": 512
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/shared/src/utils.js",
+          "renderedBytesBeforeMinification": 464
+        },
+        {
+          "path": "node_modules/@supabase/realtime-js/dist/module/lib/version.js",
+          "renderedBytesBeforeMinification": 442
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/version.js",
+          "renderedBytesBeforeMinification": 442
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/defaultAttributes.js",
+          "renderedBytesBeforeMinification": 404
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/local-storage.js",
+          "renderedBytesBeforeMinification": 391
+        },
+        {
+          "path": "\u0000commonjsHelpers.js",
+          "renderedBytesBeforeMinification": 334
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/arrow-right.js",
+          "renderedBytesBeforeMinification": 326
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/loader-circle.js",
+          "renderedBytesBeforeMinification": 298
+        },
+        {
+          "path": "src/lib/sync/types.ts",
+          "renderedBytesBeforeMinification": 269
+        },
+        {
+          "path": "node_modules/@supabase/supabase-js/dist/tracingRegistry.mjs",
+          "renderedBytesBeforeMinification": 259
+        },
+        {
+          "path": "node_modules/react/jsx-runtime.js",
+          "renderedBytesBeforeMinification": 239
+        },
+        {
+          "path": "node_modules/scheduler/index.js",
+          "renderedBytesBeforeMinification": 226
+        },
+        {
+          "path": "node_modules/react/index.js",
+          "renderedBytesBeforeMinification": 194
+        },
+        {
+          "path": "node_modules/@supabase/functions-js/dist/module/helper.js",
+          "renderedBytesBeforeMinification": 163
+        },
+        {
+          "path": "src/models.ts",
+          "renderedBytesBeforeMinification": 147
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/dexie/dist/dexie.min.js?commonjs-es-import",
+          "renderedBytesBeforeMinification": 113
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/react/index.js?commonjs-es-import",
+          "renderedBytesBeforeMinification": 100
+        },
+        {
+          "path": "node_modules/zod/v4/core/versions.js",
+          "renderedBytesBeforeMinification": 64
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/lib/types.js",
+          "renderedBytesBeforeMinification": 54
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/react/jsx-runtime.js?commonjs-es-import",
+          "renderedBytesBeforeMinification": 44
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/react/cjs/react-jsx-runtime.production.js?commonjs-exports",
+          "renderedBytesBeforeMinification": 36
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/react-dom/client.js?commonjs-es-import",
+          "renderedBytesBeforeMinification": 36
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/react-dom/cjs/react-dom-client.production.js?commonjs-exports",
+          "renderedBytesBeforeMinification": 35
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/dexie/dist/dexie.min.js?commonjs-module",
+          "renderedBytesBeforeMinification": 32
+        },
+        {
+          "path": "node_modules/@supabase/auth-js/dist/module/AuthClient.js",
+          "renderedBytesBeforeMinification": 32
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/react/jsx-runtime.js?commonjs-module",
+          "renderedBytesBeforeMinification": 31
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/scheduler/index.js?commonjs-module",
+          "renderedBytesBeforeMinification": 30
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/scheduler/cjs/scheduler.production.js?commonjs-exports",
+          "renderedBytesBeforeMinification": 30
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/react-dom/index.js?commonjs-module",
+          "renderedBytesBeforeMinification": 29
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/react-dom/cjs/react-dom.production.js?commonjs-exports",
+          "renderedBytesBeforeMinification": 29
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/react-dom/client.js?commonjs-module",
+          "renderedBytesBeforeMinification": 27
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/react/index.js?commonjs-module",
+          "renderedBytesBeforeMinification": 26
+        },
+        {
+          "path": "\u0000C:/Users/pipoy/OneDrive/Documents/ChatGPT/stride/node_modules/react/cjs/react.production.js?commonjs-exports",
+          "renderedBytesBeforeMinification": 26
+        },
+        {
+          "path": "src/pwa.css",
+          "renderedBytesBeforeMinification": 0
+        },
+        {
+          "path": "src/styles.css",
+          "renderedBytesBeforeMinification": 0
+        },
+        {
+          "path": "src/workspace.css",
+          "renderedBytesBeforeMinification": 0
+        },
+        {
+          "path": "src/mobile.css",
+          "renderedBytesBeforeMinification": 0
+        },
+        {
+          "path": "index.html",
+          "renderedBytesBeforeMinification": 0
+        }
+      ]
+    },
+    {
+      "file": "assets/App-CMz2xU7T.js",
+      "entry": false,
+      "staticImports": [
+        "assets/index-DFRkepaa.js"
+      ],
+      "dynamicImports": [
+        "assets/Subjects-BasKAZ5l.js",
+        "assets/Subjects-BasKAZ5l.js",
+        "assets/Focus-DoFO9oxi.js",
+        "assets/History-asGy-lVY.js",
+        "assets/Insights-BIHs5jkW.js",
+        "assets/Settings-D9BhsXV7.js"
+      ],
+      "bytes": 50288,
+      "gzipBytes": 15360,
+      "brotliBytes": 13436,
+      "modules": [
+        {
+          "path": "src/App.tsx",
+          "renderedBytesBeforeMinification": 17675
+        },
+        {
+          "path": "src/pages/Dashboard.tsx",
+          "renderedBytesBeforeMinification": 12534
+        },
+        {
+          "path": "src/components/Sessions.tsx",
+          "renderedBytesBeforeMinification": 10298
+        },
+        {
+          "path": "src/components/Heatmap.tsx",
+          "renderedBytesBeforeMinification": 10092
+        },
+        {
+          "path": "src/lib/sync/import.ts",
+          "renderedBytesBeforeMinification": 8712
+        },
+        {
+          "path": "src/components/HistoryImport.tsx",
+          "renderedBytesBeforeMinification": 6477
+        },
+        {
+          "path": "src/components/SubjectEditor.tsx",
+          "renderedBytesBeforeMinification": 5638
+        },
+        {
+          "path": "src/components/Onboarding.tsx",
+          "renderedBytesBeforeMinification": 5536
+        },
+        {
+          "path": "src/components/UI.tsx",
+          "renderedBytesBeforeMinification": 4513
+        },
+        {
+          "path": "src/components/Artwork.tsx",
+          "renderedBytesBeforeMinification": 4247
+        },
+        {
+          "path": "src/lib/analytics.ts",
+          "renderedBytesBeforeMinification": 2475
+        },
+        {
+          "path": "src/components/AccountPanel.tsx",
+          "renderedBytesBeforeMinification": 2187
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/settings.js",
+          "renderedBytesBeforeMinification": 919
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/calendar-days.js",
+          "renderedBytesBeforeMinification": 737
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/chart-no-axes-combined.js",
+          "renderedBytesBeforeMinification": 596
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/trash-2.js",
+          "renderedBytesBeforeMinification": 554
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/house.js",
+          "renderedBytesBeforeMinification": 474
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/book-open.js",
+          "renderedBytesBeforeMinification": 466
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/pencil.js",
+          "renderedBytesBeforeMinification": 462
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/flame.js",
+          "renderedBytesBeforeMinification": 454
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/timer.js",
+          "renderedBytesBeforeMinification": 420
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/panel-left-close.js",
+          "renderedBytesBeforeMinification": 417
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/panel-left-open.js",
+          "renderedBytesBeforeMinification": 414
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/history.js",
+          "renderedBytesBeforeMinification": 407
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/clock-3.js",
+          "renderedBytesBeforeMinification": 348
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/search.js",
+          "renderedBytesBeforeMinification": 334
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/arrow-up-right.js",
+          "renderedBytesBeforeMinification": 329
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/plus.js",
+          "renderedBytesBeforeMinification": 309
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/x.js",
+          "renderedBytesBeforeMinification": 307
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/chevron-right.js",
+          "renderedBytesBeforeMinification": 284
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/play.js",
+          "renderedBytesBeforeMinification": 281
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/check.js",
+          "renderedBytesBeforeMinification": 268
+        }
+      ]
+    },
+    {
+      "file": "assets/index-B9SpVBY9.js",
+      "entry": false,
+      "staticImports": [
+        "assets/index-DFRkepaa.js"
+      ],
+      "dynamicImports": [],
+      "bytes": 918,
+      "gzipBytes": 485,
+      "brotliBytes": 391,
+      "modules": [
+        {
+          "path": "node_modules/@tauri-apps/plugin-notification/dist-js/index.js",
+          "renderedBytesBeforeMinification": 5258
+        }
+      ]
+    },
+    {
+      "file": "assets/index-CAiN1RoV.js",
+      "entry": false,
+      "staticImports": [
+        "assets/index-DFRkepaa.js"
+      ],
+      "dynamicImports": [],
+      "bytes": 287,
+      "gzipBytes": 179,
+      "brotliBytes": 139,
+      "modules": [
+        {
+          "path": "node_modules/@tauri-apps/plugin-dialog/dist-js/index.js",
+          "renderedBytesBeforeMinification": 2767
+        }
+      ]
+    },
+    {
+      "file": "assets/index-uKDfpPCc.js",
+      "entry": false,
+      "staticImports": [
+        "assets/index-DFRkepaa.js"
+      ],
+      "dynamicImports": [],
+      "bytes": 1956,
+      "gzipBytes": 891,
+      "brotliBytes": 759,
+      "modules": [
+        {
+          "path": "node_modules/@tauri-apps/plugin-fs/dist-js/index.js",
+          "renderedBytesBeforeMinification": 8458
+        },
+        {
+          "path": "node_modules/@tauri-apps/api/path.js",
+          "renderedBytesBeforeMinification": 5199
+        }
+      ]
+    },
+    {
+      "file": "assets/Subjects-BasKAZ5l.js",
+      "entry": false,
+      "staticImports": [
+        "assets/index-DFRkepaa.js",
+        "assets/App-CMz2xU7T.js"
+      ],
+      "dynamicImports": [],
+      "bytes": 4062,
+      "gzipBytes": 1603,
+      "brotliBytes": 1387,
+      "modules": [
+        {
+          "path": "src/pages/Subjects.tsx",
+          "renderedBytesBeforeMinification": 6860
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/settings-2.js",
+          "renderedBytesBeforeMinification": 439
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/arrow-left.js",
+          "renderedBytesBeforeMinification": 325
+        }
+      ]
+    },
+    {
+      "file": "assets/Focus-DoFO9oxi.js",
+      "entry": false,
+      "staticImports": [
+        "assets/index-DFRkepaa.js",
+        "assets/App-CMz2xU7T.js"
+      ],
+      "dynamicImports": [],
+      "bytes": 6725,
+      "gzipBytes": 2558,
+      "brotliBytes": 2214,
+      "modules": [
+        {
+          "path": "src/pages/Focus.tsx",
+          "renderedBytesBeforeMinification": 13149
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/pause.js",
+          "renderedBytesBeforeMinification": 384
+        }
+      ]
+    },
+    {
+      "file": "assets/History-asGy-lVY.js",
+      "entry": false,
+      "staticImports": [
+        "assets/index-DFRkepaa.js",
+        "assets/App-CMz2xU7T.js"
+      ],
+      "dynamicImports": [],
+      "bytes": 1687,
+      "gzipBytes": 764,
+      "brotliBytes": 657,
+      "modules": [
+        {
+          "path": "src/pages/History.tsx",
+          "renderedBytesBeforeMinification": 3607
+        }
+      ]
+    },
+    {
+      "file": "assets/Insights-BIHs5jkW.js",
+      "entry": false,
+      "staticImports": [
+        "assets/index-DFRkepaa.js",
+        "assets/App-CMz2xU7T.js"
+      ],
+      "dynamicImports": [],
+      "bytes": 3679,
+      "gzipBytes": 1548,
+      "brotliBytes": 1340,
+      "modules": [
+        {
+          "path": "src/pages/Insights.tsx",
+          "renderedBytesBeforeMinification": 7366
+        }
+      ]
+    },
+    {
+      "file": "assets/Settings-D9BhsXV7.js",
+      "entry": false,
+      "staticImports": [
+        "assets/index-DFRkepaa.js",
+        "assets/App-CMz2xU7T.js"
+      ],
+      "dynamicImports": [],
+      "bytes": 28427,
+      "gzipBytes": 8950,
+      "brotliBytes": 7887,
+      "modules": [
+        {
+          "path": "src/components/RecoveryCenter.tsx",
+          "renderedBytesBeforeMinification": 16935
+        },
+        {
+          "path": "src/lib/sync/recovery.ts",
+          "renderedBytesBeforeMinification": 15441
+        },
+        {
+          "path": "src/pages/Settings.tsx",
+          "renderedBytesBeforeMinification": 11287
+        },
+        {
+          "path": "src/components/SyncPanel.tsx",
+          "renderedBytesBeforeMinification": 9972
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/shield-check.js",
+          "renderedBytesBeforeMinification": 510
+        },
+        {
+          "path": "node_modules/lucide-react/dist/esm/icons/download.js",
+          "renderedBytesBeforeMinification": 437
+        },
+        {
+          "path": "src/components/recovery.css",
+          "renderedBytesBeforeMinification": 0
+        }
+      ]
+    }
+  ]
+}

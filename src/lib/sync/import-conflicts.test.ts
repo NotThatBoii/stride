@@ -32,6 +32,8 @@ import {
 } from "./import";
 import { parseBackup } from "../validation";
 import { pullChanges } from "./pull";
+import { pushPending } from "./push";
+import { operationErrorKey } from "./failures";
 import type { SyncAdapter } from "./types";
 
 const subject: Subject = {
@@ -478,6 +480,51 @@ describe("safe staged history imports", () => {
 });
 
 describe("conflict preservation and deliberate resolution", () => {
+  it.each([undefined, ""])(
+    "clears a sequence-keyed failure after resolving a conflict with damaged operation UUID %s",
+    async (damagedId) => {
+      const db = await account();
+      const disagreement = await conflict(db);
+      const [queued] = await db.pendingOperations.toArray();
+      await db.pendingOperations.put({ ...queued, id: damagedId as string });
+      const adapter: SyncAdapter = {
+        apply: async () => {
+          throw new Error("A malformed operation must not be sent.");
+        },
+        changes: async (after) => ({
+          changes: [],
+          cursor: after,
+          has_more: false,
+        }),
+      };
+      await pushPending(db, adapter, () => {});
+      const failed = (await db.pendingOperations.get(queued.sequence!))!;
+      const errorKey = operationErrorKey(failed);
+      expect(errorKey).toBe(`op_error:sequence:${queued.sequence}`);
+      expect(await db.syncMetadata.get(errorKey)).toBeDefined();
+
+      await resolveConflict(db, disagreement.id, "remote");
+
+      expect(await db.subjects.get(subject.id)).toEqual({
+        ...subject,
+        name: "Cloud mathematics",
+      });
+      expect(await db.pendingOperations.count()).toBe(0);
+      expect(await listUnresolvedConflicts(db)).toEqual([]);
+      expect(
+        await db.syncMetadata
+          .filter((row) => row.key.startsWith("op_error:"))
+          .count(),
+      ).toBe(0);
+      expect(
+        (await db.recoveryCopies.toArray()).flatMap(
+          (copy) =>
+            (copy.snapshot as { pending?: (typeof failed)[] }).pending ?? [],
+        ),
+      ).toContainEqual(failed);
+    },
+  );
+
   for (const choice of ["remote", "both"] as const) {
     it(`keeps an unsent moved child and its exact operation outside a ${choice} parent choice`, async () => {
       const db = await account();
@@ -603,7 +650,11 @@ describe("conflict preservation and deliberate resolution", () => {
       });
       await db.syncMetadata.put({
         key: `op_error:${rejected.id}`,
-        value: JSON.stringify({ kind: "permanent", definitiveNoCommit: true }),
+        value: JSON.stringify({
+          kind: "permanent",
+          definitiveNoCommit: true,
+          rollbackProofVersion: 1,
+        }),
       });
       const parent = await conflict(db);
       const moved = {
@@ -740,7 +791,11 @@ describe("conflict preservation and deliberate resolution", () => {
     });
     await db.syncMetadata.put({
       key: `op_error:${rejected.id}`,
-      value: JSON.stringify({ kind: "permanent", definitiveNoCommit: true }),
+      value: JSON.stringify({
+        kind: "permanent",
+        definitiveNoCommit: true,
+        rollbackProofVersion: 1,
+      }),
     });
     const edited = {
       ...child,
@@ -816,7 +871,11 @@ describe("conflict preservation and deliberate resolution", () => {
     });
     await db.syncMetadata.put({
       key: `op_error:${rejected.id}`,
-      value: JSON.stringify({ kind: "permanent", definitiveNoCommit: true }),
+      value: JSON.stringify({
+        kind: "permanent",
+        definitiveNoCommit: true,
+        rollbackProofVersion: 1,
+      }),
     });
     const parent = await db.transaction("rw", db.tables, () =>
       preserveConflict(db, {
@@ -877,7 +936,11 @@ describe("conflict preservation and deliberate resolution", () => {
     });
     await db.syncMetadata.put({
       key: `op_error:${rejected.id}`,
-      value: JSON.stringify({ kind: "permanent", definitiveNoCommit: true }),
+      value: JSON.stringify({
+        kind: "permanent",
+        definitiveNoCommit: true,
+        rollbackProofVersion: 1,
+      }),
     });
     const parent = await db.transaction("rw", db.tables, () =>
       preserveConflict(db, {

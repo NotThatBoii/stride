@@ -1,15 +1,49 @@
 name: Build Windows app
 on:
   push:
+    branches: [main, codex/phase-6-hardening]
+    tags: ["v*"]
+    paths:
+      [
+        "src/**",
+        "src-tauri/**",
+        "config/**",
+        "scripts/**",
+        "public/**",
+        "package*.json",
+        "index.html",
+        "vite.config.ts",
+        "tsconfig.json",
+        ".github/workflows/windows.yml",
+      ]
+  pull_request:
     branches: [main]
-    tags: ['v*']
-    paths: ['src/**', 'src-tauri/**', 'package*.json', 'index.html', 'vite.config.ts', 'tsconfig.json', '.github/workflows/windows.yml']
+    paths:
+      [
+        "src/**",
+        "src-tauri/**",
+        "config/**",
+        "scripts/**",
+        "public/**",
+        "package*.json",
+        "index.html",
+        "vite.config.ts",
+        "tsconfig.json",
+        ".github/workflows/windows.yml",
+      ]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
   windows:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - artifact: Stride-Windows-x64
+            config: ""
+          - artifact: Stride-Windows-validation-x64
+            config: config/native-validation.json
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,25 +56,47 @@ jobs:
           workspaces: src-tauri -> target
       - run: npm ci --legacy-peer-deps
       - run: npm test
+      - run: npm run test:release-config
       - name: Check release version
         if: startsWith(github.ref, 'refs/tags/')
         shell: pwsh
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
           if ($env:GITHUB_REF_NAME -ne "v$version") { throw 'Release tag must match package version' }
-      - run: npm run desktop:build
+      - name: Build configured Windows app
+        shell: pwsh
+        env:
+          STRIDE_NATIVE_CONFIG: ${{ matrix.config }}
+        run: |
+          if ($env:STRIDE_NATIVE_CONFIG) {
+            npm run desktop:build -- --config $env:STRIDE_NATIVE_CONFIG
+          } else {
+            npm run desktop:build
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Windows build failed' }
       - name: Save Windows installer and standalone executable
         uses: actions/upload-artifact@v4
         with:
-          name: Stride-Windows-x64
+          name: ${{ matrix.artifact }}
           path: |
             src-tauri/target/release/bundle/nsis/*-setup.exe
             src-tauri/target/release/stride.exe
             src-tauri/Cargo.lock
           if-no-files-found: error
           retention-days: 30
+  publish:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: windows
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Stride-Windows-x64
+          path: windows-artifact
       - name: Publish Windows downloads
-        if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
@@ -48,8 +104,12 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $version = (Get-Content package.json | ConvertFrom-Json).version
           New-Item -ItemType Directory -Path release-files, portable | Out-Null
-          Copy-Item "src-tauri/target/release/bundle/nsis/*-setup.exe" release-files/
-          Copy-Item src-tauri/target/release/stride.exe, LICENSE portable/
+          $installer = @(Get-ChildItem windows-artifact -Recurse -File -Filter '*-setup.exe')
+          $executable = @(Get-ChildItem windows-artifact -Recurse -File -Filter 'stride.exe')
+          if ($installer.Count -ne 1 -or $executable.Count -ne 1) { throw 'Expected one release installer and executable' }
+          Copy-Item -LiteralPath $installer[0].FullName -Destination release-files/
+          Copy-Item -LiteralPath $executable[0].FullName -Destination portable/
+          Copy-Item LICENSE portable/
           Copy-Item docs/PORTABLE.txt portable/README.txt
           Compress-Archive -Path portable/* -DestinationPath "release-files/Stride_${version}_Windows-x64-portable.zip"
           Get-ChildItem release-files -File | ForEach-Object {

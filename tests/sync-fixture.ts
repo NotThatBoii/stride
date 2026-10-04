@@ -227,6 +227,16 @@ export async function device(
   await server.attach(page);
   await page.goto("/");
   await signIn(page, options.email);
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const storage = await import("/src/lib/storage.ts");
+        return Boolean(
+          await storage.getActiveDatabase().meta.get("initialized"),
+        );
+      }),
+    )
+    .toBe(true);
   await page.evaluate(async () => {
     const storage = await import("/src/lib/storage.ts");
     await storage

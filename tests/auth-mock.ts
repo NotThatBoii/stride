@@ -167,7 +167,22 @@ export async function mockAuth(page: Page, options: MockOptions = {}) {
     }
     return respond(404, { message: "Unexpected request" });
   });
-  return { calls, releaseLogout, releaseRefresh };
+  async function expireSavedSession(
+    email: keyof typeof users = "first@example.test",
+  ) {
+    const expired = {
+      ...sessionFor(email, -1),
+      expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) - 1,
+    };
+    await page.evaluate(async (session) => {
+      const { supabaseAuthStorageKey } = await import("/src/lib/supabase.ts");
+      if (!supabaseAuthStorageKey)
+        throw new Error("Auth fixture requires configured session storage.");
+      localStorage.setItem(supabaseAuthStorageKey, JSON.stringify(session));
+    }, expired);
+  }
+  return { calls, releaseLogout, releaseRefresh, expireSavedSession };
 }
 
 export async function signIn(
@@ -202,7 +217,19 @@ export async function seedAccount(page: Page, data: Data) {
     const db = storage.getActiveDatabase();
     if (!db.accountId)
       throw new Error("Test fixture requires a signed-in account.");
-    await storage.restoreData(value, db);
+    const imports = await import("/src/lib/sync/import.ts");
+    const { activeSyncWorker: worker } = await import(
+      "/src/lib/sync/worker.ts"
+    );
+    if (!worker || worker.db !== db)
+      throw new Error("Test fixture requires its account worker.");
+    await worker.runExclusive(async (current, guard) => {
+      const stage = await imports.stageImport(current, value, "backup", guard);
+      await imports.commitImport(current, stage.id, guard);
+      // Fixture setup explicitly supplies this device's onboarding/appearance.
+      await current.preferences.put({ ...value.settings, id: 1 });
+      guard();
+    });
   }, data);
 }
 

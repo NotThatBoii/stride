@@ -1,0 +1,161 @@
+{
+  "measuredAt": "2026-10-04T04:48:01.475Z",
+  "sessions": 10000,
+  "allocations": 12000,
+  "browser": "chromium",
+  "version": "154.0.4258.53",
+  "mode": "Production minified build on loopback; synthetic account IndexedDB; intercepted Auth and 503 cloud; service workers blocked; no hosted latency or packaged-native claim.",
+  "seed": {
+    "existingDatabaseOpenMs": 72.19999992847443,
+    "seedWriteMs": 680
+  },
+  "startup": {
+    "readyAt": 1453.3999999761581,
+    "longTasks": [
+      1133,
+      1019,
+      811,
+      473
+    ],
+    "databaseTransactions": [
+      {
+        "stores": [
+          "conflicts",
+          "meta",
+          "pendingOperations",
+          "preferences",
+          "recordRevisions",
+          "recoveryCopies",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncCursors",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 1.0999999046325684
+      },
+      {
+        "stores": [
+          "meta",
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readwrite",
+        "durationMs": 0.7000000476837158
+      },
+      {
+        "stores": [
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 153.80000007152557
+      },
+      {
+        "stores": [
+          "pendingOperations"
+        ],
+        "mode": "readonly",
+        "durationMs": 1896.7000000476837
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 2370.899999976158
+      },
+      {
+        "stores": [
+          "conflicts"
+        ],
+        "mode": "readonly",
+        "durationMs": 2311
+      }
+    ],
+    "databaseQueries": {
+      "store.get": 6,
+      "index.getAll": 2,
+      "store.getAll": 2,
+      "store.openCursor": 2
+    },
+    "navigation": [
+      {
+        "duration": 59.89999997615814,
+        "domContentLoaded": 59.89999997615814
+      }
+    ]
+  },
+  "historyNavigationMs": 6195,
+  "insightsNavigationMs": 6777,
+  "dashboardNavigationMs": 986,
+  "longTasksAfterNavigationAndThreeIdleSeconds": [
+    1133,
+    1019,
+    811,
+    473,
+    472,
+    475,
+    477,
+    472,
+    464,
+    472,
+    996,
+    977,
+    892,
+    707,
+    703,
+    698,
+    714,
+    707,
+    503,
+    875,
+    704,
+    705,
+    1004,
+    1277,
+    942,
+    939,
+    956,
+    947,
+    933,
+    937,
+    934,
+    921,
+    927,
+    929,
+    251,
+    712,
+    696,
+    694,
+    697,
+    691,
+    686,
+    708,
+    1255,
+    1072,
+    477,
+    457,
+    484,
+    473,
+    1029,
+    844,
+    467
+  ],
+  "idleLongTasksMs": [
+    1029,
+    844,
+    467
+  ],
+  "authenticationHttpRequests": 1,
+  "syncHttpRequests": 5
+}

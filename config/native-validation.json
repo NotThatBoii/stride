@@ -1,0 +1,17 @@
+{
+  "productName": "Stride Validation",
+  "identifier": "com.philippaglinawan.stride.validation",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Stride Validation",
+        "width": 1366,
+        "height": 900,
+        "minWidth": 760,
+        "minHeight": 600,
+        "backgroundColor": "#0f1219"
+      }
+    ]
+  }
+}

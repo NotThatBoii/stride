@@ -9,18 +9,24 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { selectWorkspace } from "../lib/local-database";
 import { supabase, supabaseAuthStorageKey } from "../lib/supabase";
-import { AuthSessionManager, type AuthStatus } from "./auth-session";
+import {
+  AuthSessionManager,
+  type AuthAction,
+  type AuthStatus,
+} from "./auth-session";
 
 interface AuthContextValue {
   status: AuthStatus;
   user: User | null;
   error: string | null;
+  pendingAction: AuthAction | null;
   signIn(email: string, password: string): Promise<void>;
   signUp(
     email: string,
     password: string,
   ): Promise<{ needsEmailConfirmation: boolean }>;
   signOut(): Promise<void>;
+  canReopenSignIn(): boolean;
   clearError(): void;
 }
 
@@ -58,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn: manager.signIn,
         signUp: manager.signUp,
         signOut: manager.signOut,
+        canReopenSignIn: manager.canReopenSignIn,
         clearError: manager.clearError,
       }}
     >

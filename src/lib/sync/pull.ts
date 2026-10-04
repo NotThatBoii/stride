@@ -149,7 +149,7 @@ async function applyChange(
   );
   // A change echo proves the mutation exists, but an interrupted submitted
   // request still retries its original UUID to settle the durable RPC receipt.
-  if (own && own.status !== "in_flight")
+  if (own && own.status !== "in_flight" && !own.wire_request)
     await acknowledgeOwnChange(db, change, own);
   if (known && compareRevision(change.revision, known.server_revision) <= 0)
     return false;

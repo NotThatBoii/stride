@@ -9,6 +9,7 @@ import {
   type Subject,
 } from "../models";
 import { validateData } from "./validation";
+import { activeSegments } from "./timer";
 import type { WireOperation } from "./sync/types";
 
 export type SyncEntity = "subject" | "session" | "settings";
@@ -69,7 +70,13 @@ export interface SyncConflict {
 
 export interface RecoveryCopy {
   id: string;
-  reason: "json_restore" | "conflict" | "remote_apply";
+  reason:
+    | "json_restore"
+    | "conflict"
+    | "remote_apply"
+    | "local_delete"
+    | "timer_discard"
+    | "operation_repair";
   entity: SyncEntity | null;
   record_id: string | null;
   snapshot: unknown;
@@ -430,12 +437,33 @@ export async function deleteSession(id: string): Promise<void> {
   const db = activeDatabase;
   await db.transaction(
     "rw",
-    db.sessions,
-    db.slices,
-    db.pendingOperations,
-    db.recordRevisions,
+    [
+      db.subjects,
+      db.sessions,
+      db.slices,
+      db.preferences,
+      db.recoveryCopies,
+      db.pendingOperations,
+      db.recordRevisions,
+    ],
     async () => {
-      if (!(await db.sessions.get(id))) return;
+      const session = await db.sessions.get(id);
+      if (!session) return;
+      const subject = await db.subjects.get(session.subject_id);
+      await db.recoveryCopies.add({
+        id: crypto.randomUUID(),
+        reason: "local_delete",
+        entity: "session",
+        record_id: id,
+        snapshot: {
+          subjects: subject ? [subject] : [],
+          sessions: [session],
+          slices: await db.slices.where("session_id").equals(id).toArray(),
+          settings: (await db.preferences.get(1)) ?? { ...defaults },
+          running: null,
+        } satisfies Data,
+        created_at: new Date().toISOString(),
+      });
       await db.slices.where("session_id").equals(id).delete();
       await db.sessions.delete(id);
       await enqueue(db, "session", id, "delete", null);
@@ -465,37 +493,59 @@ export async function saveSettings(settings: Settings): Promise<void> {
 
 export async function saveRunning(running: Running | null): Promise<void> {
   const db = activeDatabase;
-  await db.transaction("rw", db.timers, db.sessions, db.subjects, async () => {
-    if (!running) {
-      await db.timers.delete(1);
-      return;
-    }
-    const current = (await db.timers.get(1))?.value;
-    if (current && current.id !== running.id)
-      throw new Error("Another session is already running.");
-    if (await db.sessions.get(running.id))
-      throw new Error("This session has already been saved.");
-    const subject = await db.subjects.get(running.subjectId);
-    if (!subject || subject.archived)
-      throw new Error("Choose an active subject.");
-    await db.timers.put({ id: 1, value: running });
-  });
-}
-
-function slicesBySession(slices: Slice[]): Map<string, Slice[]> {
-  const result = new Map<string, Slice[]>();
-  for (const slice of slices) {
-    const current = result.get(slice.session_id) ?? [];
-    current.push(slice);
-    result.set(slice.session_id, current);
-  }
-  return result;
+  await db.transaction(
+    "rw",
+    [db.timers, db.sessions, db.subjects, db.preferences, db.recoveryCopies],
+    async () => {
+      if (!running) {
+        const discarded = (await db.timers.get(1))?.value;
+        if (discarded) {
+          const now = new Date().toISOString();
+          const subject = await db.subjects.get(discarded.subjectId);
+          await db.recoveryCopies.add({
+            id: crypto.randomUUID(),
+            reason: "timer_discard",
+            entity: "session",
+            record_id: discarded.id,
+            snapshot: {
+              subjects: subject ? [subject] : [],
+              sessions: [],
+              slices: [],
+              settings: (await db.preferences.get(1)) ?? { ...defaults },
+              running: {
+                ...discarded,
+                segments: activeSegments(discarded, Date.parse(now)),
+                runningSince: null,
+              },
+              discarded_timer: discarded,
+            },
+            created_at: now,
+          });
+        }
+        await db.timers.delete(1);
+        return;
+      }
+      const current = (await db.timers.get(1))?.value;
+      if (current && current.id !== running.id)
+        throw new Error("Another session is already running.");
+      if (await db.sessions.get(running.id))
+        throw new Error("This session has already been saved.");
+      const subject = await db.subjects.get(running.subjectId);
+      if (!subject || subject.archived)
+        throw new Error("Choose an active subject.");
+      await db.timers.put({ id: 1, value: running });
+    },
+  );
 }
 
 export async function restoreData(
   value: unknown,
   db = activeDatabase,
 ): Promise<void> {
+  if (db.accountId)
+    throw new Error(
+      "Account history must use the reviewed, additive import flow. Existing history was preserved.",
+    );
   const data = validateData(value);
   await db.transaction(
     "rw",
@@ -549,49 +599,6 @@ export async function restoreData(
         key: "initialized",
         value: new Date().toISOString(),
       });
-      if (db.accountId) {
-        const newSubjects = new Map(
-          data.subjects.map((item) => [item.id, item]),
-        );
-        const oldSubjects = new Map(
-          previous.subjects.map((item) => [item.id, item]),
-        );
-        const newSessions = new Map(
-          data.sessions.map((item) => [item.id, item]),
-        );
-        const oldSessions = new Map(
-          previous.sessions.map((item) => [item.id, item]),
-        );
-        const oldSlices = slicesBySession(previous.slices);
-        const newSlices = slicesBySession(data.slices);
-        for (const old of previous.sessions)
-          if (!newSessions.has(old.id))
-            await enqueue(db, "session", old.id, "delete", null);
-        for (const subject of data.subjects)
-          if (!same(oldSubjects.get(subject.id), subject))
-            await enqueue(db, "subject", subject.id, "upsert", subject);
-        for (const session of data.sessions) {
-          const slices = sortedSlices(newSlices.get(session.id) ?? []);
-          if (
-            !same(oldSessions.get(session.id), session) ||
-            !same(sortedSlices(oldSlices.get(session.id) ?? []), slices)
-          )
-            await enqueue(db, "session", session.id, "upsert", {
-              session,
-              slices,
-            });
-        }
-        for (const old of previous.subjects)
-          if (!newSubjects.has(old.id))
-            await enqueue(db, "subject", old.id, "delete", null);
-        if (
-          !same(
-            sharedSettings(previous.settings),
-            sharedSettings(data.settings),
-          )
-        )
-          await enqueue(db, "settings", "settings", "upsert", data.settings);
-      }
     },
   );
 }

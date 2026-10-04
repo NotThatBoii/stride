@@ -1,0 +1,32 @@
+@media (max-width: 800px) {
+  button:not(.cell),
+  input:not([type="checkbox"]):not([type="radio"]),
+  select {
+    min-height: 44px;
+  }
+  button.icon-button {
+    min-width: 44px;
+    flex-shrink: 0;
+  }
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  .quick-start select {
+    min-width: 44px;
+  }
+  summary {
+    min-height: 44px;
+    align-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .dialog-actions {
+    flex-wrap: wrap;
+  }
+  .dialog-actions > button {
+    flex: 1 1 160px;
+  }
+}

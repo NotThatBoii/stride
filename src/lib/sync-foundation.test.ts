@@ -23,6 +23,7 @@ import {
   selectWorkspace,
 } from "./storage";
 import { parseBackup } from "./validation";
+import { stageImport, commitImport } from "./sync/import";
 
 const subject: Subject = {
   id: "math",
@@ -203,7 +204,7 @@ describe("Dexie V2 migration and workspace boundaries", () => {
     expect(await account.pendingOperations.count()).toBe(beforeTimer);
   });
 
-  it("restores a version 1 JSON backup into the selected workspace", async () => {
+  it("requires an additive account import and retains unrelated account history", async () => {
     await initialize(undefined, null);
     await saveSubject({ ...subject, name: "Anonymous work" });
     const account = await openAccount();
@@ -225,17 +226,20 @@ describe("Dexie V2 migration and workspace boundaries", () => {
         running: null,
       }),
     );
-    await restoreData(backup);
-    expect((await readData()).subjects).toEqual([subject]);
+    await expect(restoreData(backup)).rejects.toThrow("additive import");
+    expect((await readData()).subjects).toEqual([previousSubject]);
+    const stage = await stageImport(account, backup, "backup");
+    await commitImport(account, stage.id);
+    expect((await readData()).subjects).toEqual([previousSubject, subject]);
     expect((await readData()).sessions).toEqual([session]);
     expect((await readData()).slices).toEqual(slices);
     const copies = await account.recoveryCopies.toArray();
     expect(copies).toHaveLength(1);
     expect(copies[0].reason).toBe("json_restore");
     expect(copies[0].snapshot).toMatchObject({
-      subjects: [previousSubject],
-      sessions: [],
-      slices: [],
+      subjects: [subject],
+      sessions: [session],
+      slices,
     });
     selectWorkspace(null);
     expect((await readData()).subjects[0].name).toBe("Anonymous work");

@@ -7,7 +7,8 @@ import {
 import { bootstrapAccount } from "./bootstrap";
 import { assertAccountDatabase } from "./conflicts";
 import { pullChanges } from "./pull";
-import { pushPending, clearOperationErrors } from "./push";
+import { pushPending } from "./push";
+import { publicSyncError } from "./failures";
 import { SyncError, type SyncAdapter, type SyncGuard } from "./types";
 
 export type SyncPhase =
@@ -249,12 +250,6 @@ export class SyncWorker {
           "You are offline. Changes are saved on this device and will sync when you reconnect.",
           "transient",
         );
-      if (manual)
-        await db.transaction("rw", db.syncMetadata, async () => {
-          guard();
-          await clearOperationErrors(db);
-          guard();
-        });
       const initial = await pullChanges(db, this.adapter, guard, {
         signal: controller.signal,
         maxPages: 20,
@@ -302,6 +297,7 @@ export class SyncWorker {
           key: "last_successful_sync",
           value: lastSynced,
         });
+        await db.syncMetadata.delete("last_sync_error");
         guard();
       });
       guard();
@@ -325,7 +321,7 @@ export class SyncWorker {
       if (pending && pushed.blocked < pending) this.dirty = true;
       return true;
     })
-      .catch((error) => {
+      .catch(async (error) => {
         if (
           !this.active ||
           lifecycle !== this.lifecycle ||
@@ -341,6 +337,27 @@ export class SyncWorker {
               );
         if (problem.kind === "cancelled") return false;
         const transient = problem.kind === "transient";
+        try {
+          await this.db.transaction("rw", this.db.syncMetadata, async () => {
+            if (!this.active || lifecycle !== this.lifecycle)
+              throw new SyncError("Synchronization stopped.", "cancelled");
+            this.accountGuard();
+            await this.db.syncMetadata.put({
+              key: "last_sync_error",
+              value: JSON.stringify({
+                kind: problem.kind,
+                message: publicSyncError(problem.kind),
+                at: new Date().toISOString(),
+              }),
+            });
+            this.accountGuard();
+            if (!this.active || lifecycle !== this.lifecycle)
+              throw new SyncError("Synchronization stopped.", "cancelled");
+          });
+        } catch {
+          /* Error reporting must never alter the preserved study data. */
+        }
+        if (!this.active || lifecycle !== this.lifecycle) return false;
         this.stoppedForError = !transient;
         const delay = transient
           ? retryDelay(this.attempts++, Math.random, problem.retryAfterMs)
@@ -350,7 +367,7 @@ export class SyncWorker {
         this.publish({
           phase:
             problem.kind === "auth" ? "auth" : transient ? "offline" : "error",
-          error: problem.message,
+          error: publicSyncError(problem.kind),
           nextRetryAt: delay === null ? null : Date.now() + delay,
         });
         if (delay !== null) {
