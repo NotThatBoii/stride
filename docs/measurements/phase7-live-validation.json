@@ -101,7 +101,7 @@
   },
   "cleanup": {
     "status": "passed",
-    "observedAtUtc": "2026-10-05T06:30:05.262Z",
+    "observedAtUtc": "2026-10-05T06:33:48.941Z",
     "testUsersCreated": 1,
     "testUsersDeleted": 1,
     "remainingDisposableRows": {
@@ -120,7 +120,7 @@
     "personalDataTouched": false,
     "ownedStudyBrowserPagesClosed": true,
     "ownedBrowserConnectionClosed": true,
-    "debugBrowserProcessStillRunning": true
+    "debugBrowserProcessStillRunning": false
   },
   "hostedUsage": {
     "observedDate": "2026-10-05",
