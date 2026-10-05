@@ -41,13 +41,24 @@ Use this for each release. Record the source/merge commit, environment, exact co
 8. Sign out: workspace disappears. Close/reopen while offline: sign-in remains required. Reconnect and sign back in: synchronized history returns. Export/import a small backup through the real file UI.
 9. Record failures and device limitations, then remove disposable test data. Do not clear personal site data to run this checklist.
 
+## Remaining ordinary Windows checks for Phase 7
+
+Use a clean Windows user or disposable VM with no personal Stride history. Keep the normal app identity and default data location; do not run these against an existing personal installation.
+
+1. Install the official published v0.4.0 installer. Create a subject/session and save a JSON backup outside the app folders.
+2. Install the reviewed ordinary 1.0.0 candidate over that installation. Confirm version, sign in with a disposable confirmed account, explicitly review/import legacy history, and verify the original session and recorded day remain.
+3. Complete a session, sync to a second client, restart and verify history/session restoration. Exercise native Open/Save As and one enabled/disabled countdown notification.
+4. Uninstall with **Delete app data** left unchecked. Reinstall the same candidate and verify retained cache/history after authentication. Record the observed default and installer version.
+5. If testing data removal, use only this disposable profile: export all local work first, explicitly select **Delete app data**, reinstall/sign in, and verify cloud-completed history returns. Unsynced work/timers/recovery copies may be lost as documented.
+6. Record WebView2 presence, Windows version, installer hashes and results; remove the disposable account afterward. Missing-WebView2 setup requires a disposable VM, never removing the runtime from this user's machine.
+
 ## After owner approves and merges
 
 Do these only after a GO decision and explicit release approval:
 
-1. Fetch the actual merged main commit; rerun/confirm required CI for that state. Verify version `1.0.0` and release notes, and archive the reviewed artifact/checksum evidence.
+1. Fetch the actual merged main commit; rerun/confirm required CI for that state. Verify the approved release version (Phase 7: `1.0.0`) and release notes, and archive the reviewed artifact/checksum evidence.
 2. Confirm production Cloudflare serves that approved version and required approved Supabase settings/migrations are in place. Complete the production signup/sync/offline smoke test again.
-3. Create/push `v1.0.0` at that approved commit. Verify the tag resolves to the intended commit and the release guard passes. The existing tag workflow publishes only after Windows builds/checksums succeed.
+3. Create/push `v<releaseVersion>` (Phase 7: `v1.0.0`) at that approved commit. Verify the tag resolves to the intended commit and the release guard passes. The existing tag workflow publishes only after Windows builds/checksums succeed.
 4. Review the generated GitHub release assets and notes: normal installer, portable ZIP, SHA256SUMS; no validation/debug package. Download from the release and verify checksums again.
 5. Repeat a clean Windows launch, real login/confirmation, two-client sync, native export/import, notification, and hosted PWA smoke test. Record exact results.
 

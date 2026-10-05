@@ -24,4 +24,4 @@ Active timers and recovery copies stay on their device. Sign-out hides history b
 
 Phone installation and standalone behavior require the physical-device checklist. Notifications require the app to remain open. Large first syncs may take time. No change-feed/receipt pruning, database migration, or application identifier change is part of Phase 7.
 
-Read [data behavior](DATA_AND_PRIVACY.md), [the release validation report](PHASE_7_RELEASE.md), and [the reusable release checklist](RELEASE_CHECKLIST.md). Use [GitHub Issues](https://github.com/NotThatBoii/stride/issues) for bugs without passwords, tokens, or private backups.
+Read [data behavior](https://github.com/NotThatBoii/stride/blob/main/docs/DATA_AND_PRIVACY.md), [the release validation report](https://github.com/NotThatBoii/stride/blob/main/docs/PHASE_7_RELEASE.md), and [the reusable release checklist](https://github.com/NotThatBoii/stride/blob/main/docs/RELEASE_CHECKLIST.md). Use [GitHub Issues](https://github.com/NotThatBoii/stride/issues) for bugs without passwords, tokens, or private backups.

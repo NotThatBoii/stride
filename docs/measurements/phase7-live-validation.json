@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "observedAtUtc": "2026-10-05T06:20:55.823Z",
+  "timezone": "Asia/Manila",
+  "sourceCheckpoint": "700d805e073b2c2752a3e7de7bb9846cab57fd91",
+  "native": {
+    "variant": "installed validation",
+    "productVersion": "1.0.0",
+    "realExport": true,
+    "realOpenDialogImport": true,
+    "matchingImportCountsBefore": {
+      "subjects": 5,
+      "sessions": 4
+    },
+    "matchingImportCountsAfter": {
+      "subjects": 5,
+      "sessions": 4
+    },
+    "sameImportedStudyRecords": true,
+    "visibleToast": true,
+    "toastTitle": "Focus session complete",
+    "toastBodyObservedPrefix": "Open Stride to save your study",
+    "singleToastObservedDuringSeconds": [
+      61.89,
+      67.177
+    ],
+    "disabledToastObserved": false,
+    "disabledCaptureSeconds": [
+      61.021,
+      63.912
+    ],
+    "restartStaleToastObserved": false,
+    "restartRetainedSubjectsSessionsSlicesTimersRecovery": true,
+    "notificationPreferenceEnabledOnRestart": true,
+    "finalCounts": {
+      "subjects": 6,
+      "sessions": 7,
+      "slices": 7,
+      "pending": 0,
+      "unresolvedConflicts": 0,
+      "recoveryCopies": 6
+    },
+    "uninstallReinstall": "MANUAL REQUIRED: native automation policy blocked launching the uninstaller"
+  },
+  "ordinaryPortable": {
+    "version": "1.0.0",
+    "login": true,
+    "legacyUpgrade": true,
+    "retainedOriginalStudyAndDays": true,
+    "originalAnonymousSourceRetained": true,
+    "restartAllOriginalSessionIdsRetained": true,
+    "restartChangedFieldOnly": "session_title: expected cloud reverse edit"
+  },
+  "hosted": {
+    "productionVersion": "0.4.0",
+    "previewVersion": "1.0.0",
+    "confirmedSigninOnboardingRefreshLogoutRelogin": true,
+    "ownerObservedEmailReceiptAndProductionRedirect": true,
+    "publicNonTeamEmailVerified": false,
+    "customSmtpEnabled": false,
+    "actualUsedLinkObserved": false,
+    "previewSigninOnboardingHistoryRefreshLogout": true,
+    "productionOfflineWorkerReload": true,
+    "previewOfflineWorkerReload": true,
+    "onlyStaticWorkerCache": true,
+    "productionOfflineSubjectPendingCount": 1,
+    "reconnectedSubjectReceivedByInstalled": true,
+    "installedCandidateCompletedSessionsReceivedByProduction": true,
+    "productionReverseEditReceivedByCandidate": true,
+    "explicitKeepBothResolutionReceivedByBoth": true
+  },
+  "upgrade": {
+    "validationInstallerOfflineUpgrade": {
+      "subjects": 4,
+      "sessions": 1,
+      "slices": 1,
+      "pendingBefore": 2,
+      "pendingAfter": 2,
+      "conflictsBefore": 1,
+      "conflictsAfter": 1,
+      "recoveryBefore": 3,
+      "recoveryAfter": 3,
+      "pausedTimersBefore": 1,
+      "pausedTimersAfter": 1,
+      "studyAndTimerExactlyRetained": true
+    },
+    "publishedOrdinaryPortable": {
+      "fromVersion": "0.4.0",
+      "toVersion": "1.0.0",
+      "subjects": 1,
+      "sessions": 1,
+      "slices": 1,
+      "explicitLegacyImport": true,
+      "originalDaysRetained": true
+    },
+    "ordinaryNsisUpgrade": "MANUAL REQUIRED: existing personal installation protected"
+  },
+  "physicalDevices": {
+    "android": "MANUAL REQUIRED: owner checklist",
+    "iphone": "MANUAL REQUIRED: no physical device tested"
+  },
+  "cleanup": {
+    "status": "passed",
+    "observedAtUtc": "2026-10-05T06:30:05.262Z",
+    "testUsersCreated": 1,
+    "testUsersDeleted": 1,
+    "remainingDisposableRows": {
+      "authUser": 0,
+      "subjects": 0,
+      "sessions": 0,
+      "allocations": 0,
+      "preferences": 0,
+      "versions": 0,
+      "clocks": 0,
+      "feed": 0,
+      "receipts": 0
+    },
+    "allOwnedClientsSignedOut": true,
+    "nativeWindowsClosed": true,
+    "personalDataTouched": false,
+    "ownedStudyBrowserPagesClosed": true,
+    "ownedBrowserConnectionClosed": true,
+    "debugBrowserProcessStillRunning": true
+  },
+  "hostedUsage": {
+    "observedDate": "2026-10-05",
+    "timezone": "Asia/Manila",
+    "databaseBytesBefore": 11816083,
+    "databaseBytesAfter": 11832467,
+    "authUsersBeforeCleanup": 2,
+    "subjects": 6,
+    "sessions": 7,
+    "allocations": 7,
+    "feedRowsBefore": 3,
+    "feedRowsAfter": 17,
+    "receiptRowsBefore": 3,
+    "receiptRowsAfter": 17,
+    "feedRelationBytes": 49152,
+    "receiptRelationBytes": 32768,
+    "workloadRequestCount": null,
+    "workloadEgressBytes": null,
+    "trafficLimitation": "Attributable live traffic not captured; do not infer from aggregate or synthetic estimates."
+  },
+  "ci": {
+    "sourceCheckpoint": "700d805e073b2c2752a3e7de7bb9846cab57fd91",
+    "frontend": {
+      "run": 37267882749,
+      "conclusion": "success"
+    },
+    "integration": {
+      "run": 37267882770,
+      "conclusion": "success",
+      "sql": 13,
+      "authPostgrestTap": 9,
+      "sdk": 6,
+      "cleanup": "success"
+    },
+    "windows": {
+      "run": 37267882810,
+      "conclusion": "success",
+      "variants": [
+        "ordinary",
+        "validation"
+      ],
+      "artifactRejectionCasesPerVariant": 4,
+      "publish": "skipped"
+    }
+  }
+}

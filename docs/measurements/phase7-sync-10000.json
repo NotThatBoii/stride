@@ -1,0 +1,66 @@
+{
+  "measuredAt": "2026-10-05T05:32:05.562Z",
+  "sessions": 10000,
+  "browser": "154.0.4258.53",
+  "mode": "Production minified Edge SDK/worker/Dexie against unchanged SQL in PGlite through intercepted RPC transport; mock Auth; one SQL connection; no hosted/PostgREST/native latency claim.",
+  "initialPull": {
+    "wallMsFromSignInClick": 34349,
+    "applyCalls": 0,
+    "changePageCalls": 102,
+    "changes": 10021,
+    "requestJsonBytes": 3254,
+    "responseJsonBytes": 6129213,
+    "unfinishedResponses": 0,
+    "indexedDbReadQueries": {
+      "store.get": 40388,
+      "index.getAll": 30227,
+      "store.getAll": 110,
+      "store.openCursor": 10032,
+      "index.getAllKeys": 10000,
+      "store.count": 1
+    }
+  },
+  "incrementalPush100": {
+    "wallMsFromBatchWriteIncludingForegroundDebounce": 4022,
+    "applyCalls": 100,
+    "changePageCalls": 2,
+    "changes": 100,
+    "requestJsonBytes": 63146,
+    "responseJsonBytes": 75675,
+    "unfinishedResponses": 0,
+    "indexedDbReadQueries": {
+      "store.get": 1115,
+      "index.getAll": 300,
+      "store.getAll": 301,
+      "store.openCursor": 806,
+      "index.getAllKeys": 0,
+      "store.count": 1
+    }
+  },
+  "authHttpRequests": 1,
+  "backupRoundTrip": {
+    "exportedSessions": 10100,
+    "exportedAllocations": 12120,
+    "exportedUtf8Bytes": 5487199,
+    "exportWallMs": 672,
+    "sameBackupImportIncludingRequiredBackupWallMs": 8475,
+    "duplicateApplyOperations": 0
+  },
+  "regressionInvestigation": {
+    "selectedObservation": "isolated repeat on the final candidate after other browser suites completed",
+    "candidateCommit": "700d805e073b2c2752a3e7de7bb9846cab57fd91",
+    "unchangedBenchmarkMethodology": true,
+    "initialCandidateObservation": {
+      "measuredAt": "2026-10-05T00:16:18.619Z",
+      "initialPullWallMs": 49187,
+      "incrementalPush100WallMs": 3998,
+      "exportWallMs": 697,
+      "sameBackupImportWallMs": 13030,
+      "sameRpcAndQueryCounts": true
+    },
+    "mergedMainBaselineInitialPullWallMs": 39917,
+    "historicalPhase6InitialPullWallMs": 36427,
+    "sameRpcAndQueryCountsAsMergedMainBaseline": true,
+    "timingBoundary": "Local Edge/PGlite intercepted transport timing; no hosted or native latency claim. A repeat investigates variation; it does not erase the original observation or establish an SLA."
+  }
+}
