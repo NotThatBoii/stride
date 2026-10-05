@@ -179,13 +179,26 @@
       "providerConfigurationRechecked": false
     },
     "ordinaryInstallerUpgradeAndDefaultReinstall": {
-      "status": "not_yet_tested",
+      "status": "owner_reported_install_login_pass_retention_unconfirmed",
       "candidateSourceHead": "7d1f29849fe63379330d38b5c91cbcbdd51a1cbb",
       "installerSha256": "0e96ee418ee50ab4cf1ff8db12d9142a9faee585623690590a4dbb5fad7e3a5b",
-      "installerProvided": true
+      "installerProvided": true,
+      "reportedLocalDate": "2026-10-06",
+      "os": "Windows 11",
+      "appVersion": "1.0.0",
+      "route": "uninstall then install",
+      "passwordLogin": "owner_reported_pass",
+      "previousInstalledVersion": null,
+      "deleteAppDataUnchecked": null,
+      "previousHistoryRetained": null,
+      "originalDaysRetained": null,
+      "inPlaceReplacementObserved": false
     },
     "actualUsedExpiredLink": {
-      "status": "not_tested"
+      "status": "not_observed",
+      "latestObservation": "No new confirmation email on successful password login.",
+      "originalConfirmationLinkReopened": null,
+      "observationIsPasswordLoginOnly": true
     },
     "androidPwa": {
       "status": "not_yet_tested",
@@ -193,7 +206,7 @@
     },
     "recommendation": "NO-GO FOR v1.0",
     "openRequiredChecks": [
-      "ordinary installer upgrade/default uninstall-reinstall",
+      "ordinary upgrade/reinstall history preservation and default app-data choice",
       "actual used/expired confirmation-link behavior"
     ]
   }
