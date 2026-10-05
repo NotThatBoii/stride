@@ -1,8 +1,8 @@
 # Phase 7 — Stride 1.0 release readiness
 
-**NO-GO FOR v1.0.** Public confirmation delivery and the remaining ordinary installer checks must pass before publication. Branch: `codex/phase-7-release`. No merge, tag, GitHub release, production migration, pruning or agent Auth-setting change occurred.
+**NO-GO FOR v1.0.** Ordinary installer upgrade/default uninstall-reinstall and actual used/expired-link checks remain uncompleted. Public signup success with friends is now owner-reported evidence. Branch: `codex/phase-7-release`. No merge, tag, GitHub release, production migration, pruning or agent Auth-setting change occurred.
 
-Executed candidate checks identify source checkpoint `700d805e073b2c2752a3e7de7bb9846cab57fd91`. Later edits contain only documentation and measurements. PR checks identify their own head/merge ref; checkpoint results are not relabeled. [Sanitized live evidence](measurements/phase7-live-validation.json) records observed boundaries without credentials or raw study data.
+Executed candidate checks identify source checkpoint `700d805e073b2c2752a3e7de7bb9846cab57fd91`. Later edits contain only documentation and measurements. PR checks identify their own head/merge ref; checkpoint results are not relabeled. [Sanitized live evidence](measurements/phase7-live-validation.json) records observed boundaries without credentials or raw study data. The manual evidence review below was reported on **October 6, 2026, Asia/Manila**; that is the report date, not an invented test date.
 
 ## A. Changes made
 
@@ -44,6 +44,8 @@ Checkpoint builds/scans and all three workflows succeeded:
 - [Disposable integration 37267882770](https://github.com/NotThatBoii/stride/actions/runs/37267882770): 13 SQL, 9 TAP, 6 SDK; disposable cleanup succeeded.
 - [Windows 37267882810](https://github.com/NotThatBoii/stride/actions/runs/37267882810): both ordinary/validation jobs passed tests/build/metadata/SHA and four artifact regression cases each. Publish skipped.
 
+The later documentation head `7d1f29849fe63379330d38b5c91cbcbdd51a1cbb` also passed [frontend 37273070427](https://github.com/NotThatBoii/stride/actions/runs/37273070427), [real integration 37273070390](https://github.com/NotThatBoii/stride/actions/runs/37273070390), and [both Windows jobs 37273070393](https://github.com/NotThatBoii/stride/actions/runs/37273070393). Exact counts remained unchanged; integration cleanup succeeded. These are executed results for that head, not a claim that a later documentation edit has already completed CI.
+
 Baseline [frontend 37218953899](https://github.com/NotThatBoii/stride/actions/runs/37218953899) and [Windows 37218953904](https://github.com/NotThatBoii/stride/actions/runs/37218953904) succeeded. Prior Phase 6 [integration 37217741659](https://github.com/NotThatBoii/stride/actions/runs/37217741659) is historical evidence. Local integration was attempted but no disposable Supabase/Docker runtime exists here; no hosted reset.
 
 Initial expanded stress run overlapped source edits: eight passes/nine setup-navigation failures from live module replacement. Failed attempt retained; frozen-source restart passed 17/17 without relaxed assertions. Historical Phase 5 screenshots/Phase 6 measurements and screenshots restored byte-for-byte.
@@ -73,15 +75,17 @@ Both actual hosted origins had controlling workers and reopened saved authentica
 
 Owner witnessed **email received; real link opened production Stride successfully**. Hosted Auth showed confirmed account; machine clients completed login/onboarding/refresh/restart/logout/relogin. No address/password/confirmation URL/token or email body committed.
 
-Read-only Site URL: `https://stride-89c.pages.dev`; no additional redirects. Custom SMTP remained disabled on final read. [Supabase default SMTP](https://supabase.com/docs/guides/auth/auth-smtp) is organization-team-only and not production delivery. Allowed-inbox success does **not** prove public non-team onboarding. Owner chose direct SMTP configuration; agent changed no hosted settings.
+October 5 read-only Site URL: `https://stride-89c.pages.dev`; no additional redirects. Custom SMTP was disabled on that read. [Supabase default SMTP](https://supabase.com/docs/guides/auth/auth-smtp) is organization-team-only and not production delivery. The October 5 allowed-inbox success alone did **not** establish public onboarding. Owner chose direct SMTP configuration; agent changed no hosted settings. Those historical observations are not a fresh assertion about October 6 configuration.
 
-**BLOCKER:** real public confirmation delivery remains unverified. Actual reused/expired email-link observation **MANUAL REQUIRED**; owner asked to reopen original link, no result received at this checkpoint. Candidate actual-SDK fixtures separately pass failed query/hash, valid callback/reload and delayed restoration. Production has not received candidate fixes.
+**Owner-reported public signup PASS, reported October 6:** in response to the question about non-team inbox signup and confirmation redirect, the owner reported trying it with friends and that it works. This is accepted as owner-reported closure of the public signup gate, separate from the agent-observed October 5 allowed-inbox flow. Exact friend test dates/builds/provider settings were not supplied; no mailbox addresses or tokens are recorded and no independent SMTP recheck is claimed.
 
-Approved change needed: owner-selected SMTP/verified sender, retaining confirmation/Site URL/templates. Credentials stay in Supabase. Failed delivery blocks signup; disable custom SMTP/restore prior values for rollback to team-only delivery. Verify fresh non-team inbox receipt/link/production redirect, confirmed login/restoration/logout/login and used/expired guidance. No paid service created.
+**Still open:** the owner explicitly reported that actual used/expired confirmation-link behavior was not tested. Candidate actual-SDK fixtures pass failed query/hash, valid callback/reload and delayed restoration, but they do not substitute for that real mail-link observation. Production has not received candidate fixes.
+
+If a further Auth/configuration change proves necessary, obtain separate explicit approval before modifying it. Credentials stay in Supabase; preserve confirmation/Site URL/templates. SMTP rollback returns to team-only delivery. No paid service or new agent configuration change was made.
 
 ## F. PWA/mobile validation
 
-**Android available — MANUAL REQUIRED:** exact [phone checklist](RELEASE_CHECKLIST.md#physical-pwa-checklist), recording phone/OS/browser/install/standalone results. Hardware cannot be controlled here. iPhone Safari physically untested. Desktop/mobile viewport automation is not a phone pass. Phone install/standalone persistence/hosted update remain manual; unavailable hardware is not itself a demonstrated defect.
+**Android available — NOT YET TESTED / MANUAL REQUIRED:** on October 6 the owner asked whether an Android app exists. Stride's Android path is the installable production website (PWA), not an APK. Open `https://stride-89c.pages.dev` in Chrome and choose **Install app** or **Add to Home screen**, then execute the exact [phone checklist](RELEASE_CHECKLIST.md#physical-pwa-checklist), recording phone/OS/browser/install/standalone results. Hardware cannot be controlled here. iPhone Safari physically untested. Desktop/mobile viewport automation is not a phone pass. Phone install/standalone persistence/hosted update remain manual; unavailable hardware is not itself a demonstrated defect.
 
 ## G. Upgrade validation
 
@@ -101,7 +105,7 @@ Additional actual 1.0 uploads reached production; production edited candidate-cr
 
 ## I. Security results
 
-Independent scan: 165 text files, zero actual credentials; seven secret-shaped matches were exact negative fixtures. Only `.env.example` tracked. Production/PWA bundle scans passed without source maps; no runtime console logging found. Evidence excludes emails/account IDs/credentials/tokens/raw records/profile files.
+Independent checkpoint scan: 165 text files, zero actual credentials; final documentation-head scan: **178 tracked text files**, the same seven known negative-fixture matches and zero actual credentials. Only `.env.example` tracked. Production/PWA bundle scans passed without source maps; no runtime console logging found. Evidence excludes emails/account IDs/credentials/tokens/raw records/profile files.
 
 Ordinary ID `com.philippaglinawan.stride` and separate validation identity unchanged. CSP and selected-file/stat/dialog/notification permissions narrow. Auth/server/RPC/RLS/private schema/recovery-export/PWA boundaries unchanged. Ownership authenticated; private schema ungranted; exports selected account study DB only, tested against injected Auth/unapproved metadata.
 
@@ -143,10 +147,26 @@ Verified checkpoint Windows run 37267882810:
 
 CI IDs ordinary **11326349813**, validation **11326809081**. Ordinary files: `Stride_1.0.0_x64-setup.exe` 2,033,601 bytes, `Stride_1.0.0_Windows-x64-portable.zip` 2,612,429 bytes, `SHA256SUMS.txt`. x64 PE/product/version/checksums/archive allowlist passed. Portable only executable/README/LICENSE. Validation product/files cannot publish as ordinary. Public endpoint/key and no development secrets/maps/debug files verified. Hashes identify exercised checkpoint files, not a future rebuild. Any merge/tag build must be independently verified. No tag/release created.
 
+Later head `7d1f298` produced [Windows run 37273070393](https://github.com/NotThatBoii/stride/actions/runs/37273070393), ordinary artifact **11328833391** and validation **11329387173**. Both downloads independently passed local outer-digest, inner-checksum, PE version/product/x64 and archive-content verification. Both portable executables launched in signed-out disposable profiles, required sign-in and hid retained history, then closed. Rebuilt binaries differ from checkpoint hashes; longer login/notification/upgrade tests above remain attributed to the checkpoint packages.
+
+| Later ordinary asset offered for owner testing | SHA-256 |
+| --- | --- |
+| `Stride_1.0.0_x64-setup.exe` (2,032,810 bytes) | `0e96ee418ee50ab4cf1ff8db12d9142a9faee585623690590a4dbb5fad7e3a5b` |
+| `Stride_1.0.0_Windows-x64-portable.zip` (2,612,439 bytes) | `65eb70c79bbb5e34d1ee58c333f559b963fb8e1c9cb080d5398b20d8ce82a65b` |
+
+The verified installer was provided to the owner on October 6 for the still-pending ordinary Windows test. Its availability is not a test pass.
+
 ## N. Remaining blockers
 
-1. **Public onboarding:** custom SMTP disabled; owner-configured non-team email confirmation must pass. Actual used/expired-link guidance remains a manual email check.
-2. **Ordinary Windows distribution:** clean NSIS upgrade/default uninstall-reinstall observations required. Validation installer/source evidence does not substitute for these actual checks.
+| Gate | Latest evidence | Disposition |
+| --- | --- | --- |
+| Public signup with non-team inbox/confirmation redirect | Owner reported signup works with friends on October 6; test build/date details not supplied | OWNER-REPORTED PASS; independent provider/configuration verification not claimed |
+| Ordinary NSIS upgrade and default uninstall/reinstall preserving history | Owner requested the candidate installer and intends to test it; link supplied | OPEN — no actual result yet |
+| Actual used/expired confirmation-link guidance | Owner explicitly reported not tested | OPEN — fixtures pass, real-link observation missing |
+| Physical Android PWA | Owner asked about Android installation; PWA instructions clarified | MANUAL REQUIRED — no physical result yet |
+| Physical iPhone Safari | No available-device test reported | MANUAL REQUIRED — no support claim |
+
+The two uncompleted required checks are ordinary installer upgrade/default uninstall-reinstall and actual used/expired-link behavior. Candidate validation-product/source evidence does not substitute for them. No new public-delivery failure is inferred from the historical SMTP setting after the owner's signup success report.
 
 Android/iPhone install/standalone/update **MANUAL REQUIRED**, exact checklist supplied; no fabricated hardware failure. Optional later: smaller bundles, broader assistive-technology coverage, separately approved retention protocol. No demonstrated data-loss/performance bug.
 
@@ -154,4 +174,4 @@ Cleanup passed: one disposable Auth user deleted after every test client signed 
 
 ## O. Recommendation
 
-**NO-GO FOR v1.0.** Review the unmerged PR, complete email/ordinary installer gates and record phone results. Tests/version preparation/validation-product toast success do not waive those observations. Only after an accepted GO and explicit owner approval perform [manual release steps](RELEASE_CHECKLIST.md#after-owner-approves-and-merges).
+**NO-GO FOR v1.0.** Owner-reported friend signup closes that gate, but ordinary installer upgrade/default uninstall-reinstall and actual used/expired-link evidence are still missing. Record physical PWA results separately without inventing device failures. Keep PR #9 draft and unmerged. When the required gates pass, record an accepted GO and provide the exact ready-for-review → merge → main CI/deployment → annotated tag → release workflow → published artifact → post-release smoke sequence. Pushing `v1.0.0` starts automatic GitHub Release publication, so it is a release action requiring explicit approval. No such action is performed by this documentation update.

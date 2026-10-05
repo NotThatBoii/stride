@@ -165,5 +165,36 @@
       "artifactRejectionCasesPerVariant": 4,
       "publish": "skipped"
     }
+  },
+  "ownerManualEvidenceReview": {
+    "reportedLocalDate": "2026-10-06",
+    "timezone": "Asia/Manila",
+    "source": "direct owner response",
+    "publicSignup": {
+      "status": "owner_reported_pass",
+      "observation": "Owner reports public signup works when tried with friends.",
+      "testDate": null,
+      "testedBuild": null,
+      "independentlyObserved": false,
+      "providerConfigurationRechecked": false
+    },
+    "ordinaryInstallerUpgradeAndDefaultReinstall": {
+      "status": "not_yet_tested",
+      "candidateSourceHead": "7d1f29849fe63379330d38b5c91cbcbdd51a1cbb",
+      "installerSha256": "0e96ee418ee50ab4cf1ff8db12d9142a9faee585623690590a4dbb5fad7e3a5b",
+      "installerProvided": true
+    },
+    "actualUsedExpiredLink": {
+      "status": "not_tested"
+    },
+    "androidPwa": {
+      "status": "not_yet_tested",
+      "installationExplained": "Production website installed through Chrome; no APK."
+    },
+    "recommendation": "NO-GO FOR v1.0",
+    "openRequiredChecks": [
+      "ordinary installer upgrade/default uninstall-reinstall",
+      "actual used/expired confirmation-link behavior"
+    ]
   }
 }
