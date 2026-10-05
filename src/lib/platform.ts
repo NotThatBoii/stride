@@ -1,7 +1,8 @@
 import { isTauri } from "@tauri-apps/api/core";
+import { version } from "../../package.json";
 
 export const isDesktop = isTauri();
-export const appVersion = "0.4.0";
+export const appVersion = version;
 
 export async function requestNotifications(): Promise<boolean> {
   if (isDesktop) {

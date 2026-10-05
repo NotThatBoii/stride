@@ -1,17 +1,21 @@
-Stride for Windows x64
+Stride 1.0.0 for Windows x64 — release candidate until publication is approved
 
-Extract this ZIP and open stride.exe. No Node.js, terminal, or local server is needed.
-Windows 10/11 x64 and Microsoft Edge WebView2 Runtime are required. Use the setup.exe installer from the same GitHub Release if WebView2 is missing.
+Extract the ZIP and open stride.exe. Windows 10/11 x64 and Microsoft Edge WebView2 Runtime are required. No Node.js, terminal, or local server is needed. If WebView2 is missing, use the installer from the same approved GitHub Release; its initial runtime download requires internet.
 
-This is a portable executable, not a portable data profile: study data stays in your Windows user profile, and is shared with the installed version of Stride.
+Portable describes the application files. Study data stays in your Windows user profile, normally under %LOCALAPPDATA%\com.philippaglinawan.stride, shared with the ordinary installed edition. Copying the executable does not copy your history.
 
-A Supabase email/password account is required to open a study workspace. Sign in or create an account on the entry screen; if email confirmation is required, confirm the email and then sign in. A restored unexpired session can open the account's local cache offline through the official Supabase client. Signing in requires a connection. A signed-out device or a session that cannot refresh stays at authentication. Missing build configuration displays a configuration error.
+An email/password account is required. Create an account, confirm its email, then sign in. First sign-in or expired credentials need internet. A saved eligible session can restore its local workspace offline. Study actions save locally and queue until reconnect. Subjects, completed sessions, recorded study days, and shared study preferences synchronize to devices signed into the same account.
 
-Each account has its own local study database on this device. Signing in on another PC does not recover your history: cloud synchronization is not implemented. To transfer an authenticated workspace's history: Settings > Export JSON, then sign in and use Settings > Import JSON on the destination. Import replaces that account's local workspace after confirmation. Export a backup before upgrading or restoring.
+Active timers, appearance, notifications, and recovery copies remain device-local. Notifications require Stride to be open. Signing out hides the workspace and keeps its local history and pending changes. Sign back into the same account to reopen it.
 
-Signing out immediately hides the workspace and preserves all local data, including account caches and timer recovery. Pause a running timer before signing out if you do not want it to continue counting. Earlier anonymous data remains stored internally but is not exposed or automatically imported; explicit legacy import/recovery is deferred to Phase 5.
+Settings > Export JSON saves a readable backup. Keep backups outside the app profile. Import JSON reviews the file, requires a fresh backup download, reconciles cloud history, and adds records without replacing unrelated history. Different versions require review; identical records are deduplicated. Imported timers restore paused. Existing anonymous history is offered for explicit import after sign-in and its source remains stored.
 
-The application is unsigned. Notifications require Stride to remain open.
+Settings > Cloud synchronization and Recovery and sync issues show pending changes, conflicts, and preserved copies. Wait for sync to finish before moving devices. Clearing the profile can lose unsynced changes, timers, and recovery copies. Synced completed history can download after signing in again. Normal installer uninstall preserves data by default; selecting Delete app data removes local storage. Deleting this extracted ZIP folder leaves profile data in place.
 
-Updates and installer: https://github.com/NotThatBoii/stride/releases/latest
+Builds are unsigned. Verify downloads against SHA256SUMS.txt from the same release.
+
+Web app: https://stride-89c.pages.dev
+Updates: https://github.com/NotThatBoii/stride/releases/latest
+Data behavior: https://github.com/NotThatBoii/stride/blob/main/docs/DATA_AND_PRIVACY.md
+Bugs: https://github.com/NotThatBoii/stride/issues
 Source and MIT license: https://github.com/NotThatBoii/stride

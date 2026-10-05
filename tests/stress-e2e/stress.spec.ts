@@ -892,3 +892,123 @@ test("a synced JSON export deduplicates on import and an older version-1 diverge
   );
   expect(await cloud.rows("sessions")).toHaveLength(2);
 });
+
+test("a missing local account cache pulls exact cloud history from zero without duplicate uploads or a premature Synced status", async ({
+  browser,
+  cloud,
+}) => {
+  const a = await stressDevice(browser, cloud);
+  await saveSubject(a.page);
+  await saveSession(a.page);
+  await a.page.evaluate(async () => {
+    const storage = await import("/src/lib/storage.ts");
+    const data = await storage.readData();
+    await storage.saveSettings({ ...data.settings, minimum: 35, goal: 90 });
+  });
+  await settle(a.page);
+  const before = await snapshot(a.page);
+  const appliesBefore = cloud.calls.filter(
+    (call) => call.name === "apply_sync_operation",
+  ).length;
+  const callsBefore = cloud.calls.length;
+  await a.page.close();
+
+  // This page has no application code or open database connection. Delete
+  // only this disposable account cache; keep the context's Auth storage.
+  const reopened = await a.context.newPage();
+  await reopened.route("**/__test/local-cache-loss", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<title>Cache loss test</title>",
+    }),
+  );
+  await reopened.goto("/__test/local-cache-loss");
+  await reopened.evaluate(async (accountId) => {
+    const name = `stride-account-${accountId}`;
+    if (!(await indexedDB.databases()).some((db) => db.name === name))
+      throw new Error("The isolated account cache was not created.");
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.deleteDatabase(name);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      request.onblocked = () =>
+        reject(new Error("The account cache is still open."));
+    });
+    if ((await indexedDB.databases()).some((db) => db.name === name))
+      throw new Error("The isolated account cache was not removed.");
+  }, users["first@example.test"]);
+
+  await mockAuth(reopened);
+  await cloud.attach(reopened);
+  const firstPull = cloud.holdNextPull(reopened);
+  try {
+    await reopened.goto("/");
+    await firstPull.captured;
+    expect((await workerState(reopened))?.phase).toBe("syncing");
+    const empty = await snapshot(reopened);
+    expect(empty.data.subjects).toEqual([]);
+    expect(empty.data.sessions).toEqual([]);
+    expect(empty.data.slices).toEqual([]);
+    expect(empty.cursors).toEqual([]);
+    expect(
+      empty.metadata.some((row) => row.key === "last_successful_sync"),
+    ).toBe(false);
+
+    // Onboarding is device-local. Mark it complete as the existing device
+    // fixture does, so the ordinary workspace status can be inspected.
+    await reopened.evaluate(async () => {
+      const storage = await import("/src/lib/storage.ts");
+      await storage
+        .getActiveDatabase()
+        .preferences.update(1, { onboarded: true });
+    });
+    await expect(
+      reopened.getByRole("button", {
+        name: "Synchronization: Syncing…",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      reopened.getByRole("button", {
+        name: "Synchronization: Synced",
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    const firstRequest = cloud.calls
+      .slice(callsBefore)
+      .find((call) => call.name === "get_sync_changes");
+    expect(firstRequest?.body.p_after).toBe("0");
+    firstPull.release();
+    await settle(reopened);
+    await expect(
+      reopened.getByRole("button", {
+        name: "Synchronization: Synced",
+        exact: true,
+      }),
+    ).toBeVisible();
+    const recovered = await snapshot(reopened);
+    expect(recovered.data.subjects).toEqual(before.data.subjects);
+    expect(recovered.data.sessions).toEqual(before.data.sessions);
+    expect(recovered.data.slices).toEqual(before.data.slices);
+    expect(recovered.data.settings.minimum).toBe(35);
+    expect(recovered.data.settings.goal).toBe(90);
+    const revisions = (value: typeof recovered) =>
+      value.revisions.map(
+        ({ updated_at: _updatedAt, ...revision }) => revision,
+      );
+    expect(revisions(recovered)).toEqual(revisions(before));
+    expect(
+      recovered.cursors.map(({ stream, cursor }) => ({ stream, cursor })),
+    ).toEqual(before.cursors.map(({ stream, cursor }) => ({ stream, cursor })));
+    expect(recovered.operations).toEqual([]);
+    expect(recovered.conflicts).toEqual([]);
+    expect(
+      cloud.calls.filter((call) => call.name === "apply_sync_operation"),
+    ).toHaveLength(appliesBefore);
+    expect(await cloud.rows("subjects")).toHaveLength(1);
+    expect(await cloud.rows("sessions")).toHaveLength(1);
+    expect(await cloud.rows("allocations")).toHaveLength(2);
+  } finally {
+    firstPull.release();
+  }
+});
