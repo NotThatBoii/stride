@@ -1,6 +1,6 @@
 # Phase 7 — Stride 1.0 release readiness
 
-**NO-GO FOR v1.0.** The owner reports Windows 11 uninstall/install and Stride 1.0.0 password login working. Previous-history retention/default app-data handling and actual used/expired-link checks still require evidence. Public signup success with friends is owner-reported. Branch: `codex/phase-7-release`. No merge, tag, GitHub release, production migration, pruning or agent Auth-setting change occurred.
+**GO FOR v1.0.** The required manual gaps are closed by the owner's October 6 reports: public signup with friends, Windows 11 / Stride 1.0.0 uninstall-reinstall retaining history and the signed-in session with **Delete app data unchecked**, and reopening the original confirmation email link into the signed-in web workspace. Phone PWA installation also works. The exact observation limits remain recorded below. Branch: `codex/phase-7-release`. PR #9 remains draft and unmerged; no tag, GitHub Release, production migration, pruning or agent Auth-setting change occurred. GO is a recommendation, not authorization to perform release actions.
 
 Executed candidate checks identify source checkpoint `700d805e073b2c2752a3e7de7bb9846cab57fd91`. Later edits contain only documentation and measurements. PR checks identify their own head/merge ref; checkpoint results are not relabeled. [Sanitized live evidence](measurements/phase7-live-validation.json) records observed boundaries without credentials or raw study data. The manual evidence review below was reported on **October 6, 2026, Asia/Manila**; that is the report date, not an invented test date.
 
@@ -65,7 +65,7 @@ First capture at 74 seconds was too late to establish delivery; timed repeat sup
 
 WebView2 already installed; missing-runtime behavior source/config-backed. October 5 native automation blocked launching the owned uninstaller and was not bypassed. Tauri NSIS source preserves data by default; **Delete app data** removes app directories. Personal ordinary installation/profile was protected during agent testing.
 
-**Owner-reported uninstall/install and login PASS, reported October 6:** the owner used uninstall followed by installation and successfully entered account details to sign in on **Windows 11 / Stride 1.0.0**. This supplies an actual owner observation for that route. The previous installed version, **Delete app data** choice, previous subject/session retention and original recorded days were not explicitly reported; those data-preservation details remain open. It does not establish a separate in-place installer-over-installer observation.
+**Owner-reported uninstall/install, retention and session restoration PASS, reported October 6:** the owner used uninstall followed by installation on **Windows 11 / Stride 1.0.0**, then explicitly confirmed that **Delete app data was unchecked** and previous subjects/completed sessions remained. Reopening Stride restored the signed-in workspace without asking for credentials. The earlier password-login observation also passed. This closes the ordinary reinstall/data-retention gate for that observed route. Previous installed version, independently compared allocation rows and a separate in-place installer-over-installer test were not supplied; no such extra observations are claimed.
 
 ## D. Web validation
 
@@ -81,15 +81,15 @@ October 5 read-only Site URL: `https://stride-89c.pages.dev`; no additional redi
 
 **Owner-reported public signup PASS, reported October 6:** in response to the question about non-team inbox signup and confirmation redirect, the owner reported trying it with friends and that it works. This is accepted as owner-reported closure of the public signup gate, separate from the agent-observed October 5 allowed-inbox flow. Exact friend test dates/builds/provider settings were not supplied; no mailbox addresses or tokens are recorded and no independent SMTP recheck is claimed.
 
-**Still open:** the owner explicitly reported that actual used/expired confirmation-link behavior was not tested. Candidate actual-SDK fixtures pass failed query/hash, valid callback/reload and delayed restoration, but they do not substitute for that real mail-link observation. Production has not received candidate fixes.
+**Owner-reported actual reused-link PASS, reported October 6:** after being asked specifically to reopen the original signup confirmation link from email for an already-confirmed disposable account, the owner reported that Stride's web version opened with the account already logged in. That is the exact observed result: normal signed-in access, without a reported loop or blocking error. It does not establish that a fresh session was issued, that an error-guidance screen was displayed, or that expiry was deliberately forced. Candidate actual-SDK fixtures separately pass failed query/hash, valid callback/reload and delayed restoration. Production has not received candidate fixes.
 
-The later Windows 11 / Stride 1.0.0 observation reports successful password login with no new confirmation email. That is expected for an already-confirmed account: the sign-in path uses `signInWithPassword`, while account creation separately uses `signUp`. It is a login observation, not evidence of reopening an already-used confirmation URL. The owner was asked to inspect that original link separately without sharing its URL/token.
+The Windows 11 / Stride 1.0.0 observation also reports password login without a new confirmation email. That is expected for an already-confirmed account: the sign-in path uses `signInWithPassword`, while account creation separately uses `signUp`. That login observation is distinct from the subsequently reported original-link reopening above. No URL/token was shared or committed.
 
 If a further Auth/configuration change proves necessary, obtain separate explicit approval before modifying it. Credentials stay in Supabase; preserve confirmation/Site URL/templates. SMTP rollback returns to team-only delivery. No paid service or new agent configuration change was made.
 
 ## F. PWA/mobile validation
 
-**Android available — NOT YET TESTED / MANUAL REQUIRED:** on October 6 the owner asked whether an Android app exists. Stride's Android path is the installable production website (PWA), not an APK. Open `https://stride-89c.pages.dev` in Chrome and choose **Install app** or **Add to Home screen**, then execute the exact [phone checklist](RELEASE_CHECKLIST.md#physical-pwa-checklist), recording phone/OS/browser/install/standalone results. Hardware cannot be controlled here. iPhone Safari physically untested. Desktop/mobile viewport automation is not a phone pass. Phone install/standalone persistence/hosted update remain manual; unavailable hardware is not itself a demonstrated defect.
+**Owner-reported phone PWA installation PASS, reported October 6:** the owner said installing the web app onto the phone works. Android was the earlier available-device context; phone model, OS/browser version, actual install method and tested app build were not supplied. Stride's phone installation is the website/PWA, not an APK. Only installation is marked passed: standalone persistence, physical offline queue/reconnect and hosted update were not individually reported. The remaining exact [phone checklist](RELEASE_CHECKLIST.md#physical-pwa-checklist) stays available for recording those limits. Hardware cannot be controlled here; iPhone Safari remains physically untested. Desktop/mobile viewport automation is not a phone pass. These unobserved device cases are not newly inferred product failures.
 
 ## G. Upgrade validation
 
@@ -99,7 +99,7 @@ Latest published [v0.4.0](https://github.com/NotThatBoii/stride/releases/tag/v0.
 
 **Installed authenticated Phase 6 validation → candidate validation installer:** verified NSIS upgrade exit 0, PE product/file version 1.0.0. Reopened offline before reconciliation: exact four subjects, one session/allocation, two pending operations/UUIDs, one conflict, three recovery copies, paused timer, preferences, revisions and cursor. Candidate finished saved timer offline, reconnected/uploaded safely.
 
-Distinct scenarios: published v0.4.0 had no Auth outbox/recovery. The October 6 owner report adds a working ordinary uninstall → install → password-login route on Windows 11 / Stride 1.0.0. It does not specify the prior version or whether previous subjects/sessions and their recorded days survived. Default app-data choice/history retention are awaiting clarification; direct installer-over-installer behavior is not claimed. The agent's personal-profile protection prevented its own ordinary-install setup. No identifier/schema change.
+Distinct scenarios: published v0.4.0 had no Auth outbox/recovery. The October 6 owner report adds the ordinary uninstall → install route on Windows 11 / Stride 1.0.0, with **Delete app data unchecked**, previous subjects/sessions retained and authenticated workspace automatically restored. The prior installed version and a direct installer-over-installer run were not specified; neither is invented. Original allocation-day invariants remain established by the exact agent tests above, not by an assumed manual row comparison. The agent's personal-profile protection prevented its own ordinary-install setup. No identifier/schema change.
 
 ## H. Multi-device acceptance
 
@@ -137,7 +137,7 @@ Largest observed tables: private clocks 57,344 bytes; private versions/feed/publ
 
 ## L. Known limitations
 
-Unsigned x64/WebView2; eligible saved session needed offline. Active timers/recovery/pending work device-local; storage removal can lose unsynced work. Large first sync honest Syncing status. No physical iOS claim, password-reset screen, encrypted backups, automatic pruning or cross-device timer transfer. Ordinary uninstall/install/login works on the owner-reported Windows 11 test; retention/default data-choice details and physical phone checks remain manual.
+Unsigned x64/WebView2; eligible saved session needed offline. Active timers/recovery/pending work device-local; storage removal can lose unsynced work. Large first sync honest Syncing status. No physical iOS claim, password-reset screen, encrypted backups, automatic pruning or cross-device timer transfer. Ordinary uninstall/install/history/session retention passes on the owner-reported Windows 11 route. Phone installation passes; additional phone offline/update/standalone cases remain unreported manual limits.
 
 ## M. Release artifacts
 
@@ -158,7 +158,7 @@ Later head `7d1f298` produced [Windows run 37273070393](https://github.com/NotTh
 | `Stride_1.0.0_x64-setup.exe` (2,032,810 bytes) | `0e96ee418ee50ab4cf1ff8db12d9142a9faee585623690590a4dbb5fad7e3a5b` |
 | `Stride_1.0.0_Windows-x64-portable.zip` (2,612,439 bytes) | `65eb70c79bbb5e34d1ee58c333f559b963fb8e1c9cb080d5398b20d8ce82a65b` |
 
-The verified installer was provided to the owner on October 6. The owner subsequently reported uninstall/install and login working on Windows 11 / Stride 1.0.0. No new independently observed install or owner-supplied checksum comparison is claimed; longer agent observations remain tied to their exact builds above.
+The verified installer was provided to the owner on October 6. The owner subsequently reported uninstall/install, history retention with app-data removal unchecked, and restored login working on Windows 11 / Stride 1.0.0. No new independently observed install or owner-supplied checksum comparison is claimed; longer agent observations remain tied to their exact builds above.
 
 ## N. Remaining blockers
 
@@ -166,17 +166,59 @@ The verified installer was provided to the owner on October 6. The owner subsequ
 | --- | --- | --- |
 | Public signup with non-team inbox/confirmation redirect | Owner reported signup works with friends on October 6; test build/date details not supplied | OWNER-REPORTED PASS; independent provider/configuration verification not claimed |
 | Ordinary uninstall/install, launch and password login | Owner reports working on Windows 11 / Stride 1.0.0 | OWNER-REPORTED PASS for this route |
-| Ordinary upgrade/default uninstall-reinstall preserving history | Previous version, app-data choice and previous records/days survival not explicitly reported | OPEN — data-preservation clarification pending; in-place replacement not claimed |
-| Actual used/expired confirmation-link guidance | No new email during ordinary password login; original used link has not been reported reopened | OPEN — expected login behavior does not exercise the link |
-| Physical Android PWA | Owner asked about Android installation; PWA instructions clarified | MANUAL REQUIRED — no physical result yet |
+| Ordinary reinstall preserving history/session | Owner explicitly confirms previous subjects/completed sessions remained, Delete app data unchecked, workspace opens signed in | OWNER-REPORTED PASS; previous version/in-place replacement not claimed |
+| Actual reused confirmation-link behavior | Original email link reopened Stride's web workspace already signed in | OWNER-REPORTED PASS for normal access; no forced-expiry/error-screen claim |
+| Physical phone PWA installation | Owner reports installing the web app onto the phone works | OWNER-REPORTED INSTALL PASS; other phone checklist cases remain manual |
 | Physical iPhone Safari | No available-device test reported | MANUAL REQUIRED — no support claim |
 
-The two uncompleted required checks are ordinary upgrade/reinstall history preservation with the default app-data choice, and actual used/expired-link behavior. The successful owner uninstall/install/login narrows the Windows gap; it is not itself a report about surviving history. Candidate validation-product/source evidence does not substitute for the missing observations. No new public-delivery failure is inferred from historical SMTP settings or the absence of mail during password login.
+**No remaining demonstrated release blocker.** The two recorded manual gaps are closed by the clarified owner observations, alongside the prior automated/CI/hosted evidence. Owner-reported results remain distinct from independent machine observations. No new public-delivery failure is inferred from historical SMTP settings or absence of mail during password login. Final reviewed-head CI must still be green before marking ready/merging; a later failing check would reopen the decision.
 
-Android/iPhone install/standalone/update **MANUAL REQUIRED**, exact checklist supplied; no fabricated hardware failure. Optional later: smaller bundles, broader assistive-technology coverage, separately approved retention protocol. No demonstrated data-loss/performance bug.
+Additional Android standalone/offline/update and iPhone cases remain **MANUAL REQUIRED / UNTESTED**, with the exact checklist supplied; phone installation itself passed. Optional later: smaller bundles, broader assistive-technology coverage, separately approved retention protocol. No demonstrated data-loss/performance bug.
 
 Cleanup passed: one disposable Auth user deleted after every test client signed out. A read-only query scoped to that user returned zero in all nine categories: Auth user, subjects, sessions, allocations, preferences, versions, clocks, feed and receipts. Native windows/owned browser closed; ignored credential file removed. Personal account/history/profile untouched. Disposable CI cleanup also succeeded.
 
 ## O. Recommendation
 
-**NO-GO FOR v1.0.** Owner-reported friend signup and Windows 11 / Stride 1.0.0 uninstall/install/login pass. Previous-history/default app-data preservation details and actual used/expired-link evidence remain missing. Record physical PWA results separately without inventing device failures. Keep PR #9 draft and unmerged. When the required gates pass, record an accepted GO and provide the exact ready-for-review → merge → main CI/deployment → annotated tag → release workflow → published artifact → post-release smoke sequence. Pushing `v1.0.0` starts automatic GitHub Release publication, so it is a release action requiring explicit approval. No such action is performed by this documentation update.
+**GO FOR v1.0.** Public signup, ordinary Windows reinstall/history/session retention and original confirmation-link reopening pass on the owner's reported evidence. Automated source tests, real disposable integration, hosted sync/data-preservation and Windows package/notification evidence remain intact. Phone installation passes with the additional manual limits stated above. Keep PR #9 draft and unmerged for the owner's review; GO does not perform or authorize merge/tag/publication. No release action was executed.
+
+### Exact owner release sequence
+
+Perform these only after accepting this GO decision and approving release. Run commands from a clean repository checkout, one at a time, and stop on any failure. **Pushing `v1.0.0` automatically creates the GitHub Release after the Windows workflow succeeds.** Do not push it before the main checks below pass.
+
+1. **Mark PR #9 ready for review.** Open [PR #9](https://github.com/NotThatBoii/stride/pull/9), verify this report/description and all three workflows for its final reviewed head, then select **Ready for review**. Record that head SHA. Review is still required; this documentation update leaves it draft.
+2. **Merge PR #9.** After review and required checks pass, merge using the repository's configured GitHub merge method. Record the resulting main commit SHA; it need not equal the PR head.
+3. **Verify main CI and deployment.** On that exact SHA, confirm **Verify Stride**, **Verify local Supabase integration**, and both ordinary/validation jobs in **Build Windows app** pass. If a path-filtered workflow has no run, dispatch it on that exact main state through Actions. Confirm Cloudflare production deployment corresponds to that SHA and Settings at `https://stride-89c.pages.dev` shows **1.0.0**. Smoke-test real signup/confirmation/login, history/sync, offline/reconnect and logout. Phase 7 needs no new production schema migration or Auth configuration change; stop for separate approval if one becomes necessary.
+4. **Create and push the annotated tag at the approved main SHA.** Fetch main/tags, check out that exact remote-main state and compare it with the recorded merge SHA. Detached checkout works even when this workspace has no local main branch. Verify release metadata and absence of the tag before creating it:
+
+   ```powershell
+   git status --short
+   # Require no local changes before continuing.
+   git fetch origin main --tags
+   # Stop if fetching fails.
+   git switch --detach origin/main
+   # Stop if switching fails.
+   $approvedReleaseCommit = '<main merge SHA recorded in step 2>'
+   if ((git rev-parse HEAD).Trim() -ne $approvedReleaseCommit) { throw 'Main differs from the approved commit.' }
+   node scripts/release-version.mjs v1.0.0
+   if ($LASTEXITCODE -ne 0) { throw 'Release version/tag guard failed.' }
+   git tag --list v1.0.0
+   git ls-remote --tags origin refs/tags/v1.0.0 'refs/tags/v1.0.0^{}'
+   # Both tag lookups must succeed and return no matches. Never replace an existing tag.
+   git tag -a v1.0.0 $approvedReleaseCommit -m 'Stride v1.0.0'
+   if ($LASTEXITCODE -ne 0) { throw 'Tag creation failed.' }
+   git push origin refs/tags/v1.0.0
+   if ($LASTEXITCODE -ne 0) { throw 'Tag push failed.' }
+   git rev-parse 'v1.0.0^{}'
+   git ls-remote --tags origin refs/tags/v1.0.0 'refs/tags/v1.0.0^{}'
+   # Local peeled SHA and remote ^{} SHA must equal the approved merge SHA.
+   ```
+
+5. **Verify the tag release workflow.** In Actions, open **Build Windows app** for `v1.0.0` and that approved SHA. Both matrix jobs and **publish** must succeed; **Verify Stride** also runs for the tag. Integration is checked on main, not expected as a tag-triggered run. Confirm the generated release targets the tag and has the intended 1.0.0 title/notes. Only ordinary **Stride-Windows-x64** assets may be published.
+6. **Verify the published Windows downloads.** From the actual GitHub Release download exactly `Stride_1.0.0_x64-setup.exe`, `Stride_1.0.0_Windows-x64-portable.zip`, and `SHA256SUMS.txt` into a fresh folder. From the approved main checkout run:
+
+   ```powershell
+   ./scripts/verify-windows-artifacts.ps1 -Directory '.\work\release-v1.0.0-downloads' -Version 1.0.0
+   ```
+
+   This verifies both hashes, installer product/version, portable Windows x64 product/version and ZIP contents limited to `stride.exe`, `README.txt`, `LICENSE`. Compare with the ordinary artifact from the **same tag run**, not earlier candidate hashes. No validation/debug package should be in the release.
+7. **Post-release web + Windows smoke.** Use disposable accounts and a clean Windows user/VM with the actual published installer and portable downloads. Check 1.0.0, real email confirmation/login, restart/history persistence, two-client subject/session transfer and reverse edit, offline completion/queue/reconnect, conflict **Keep both**, native export/reviewed import, visible/disabled/stale countdown notification and logout hiding history. Confirm production PWA shell/installation; record physical phone offline/update cases only if actually tested. Clean up disposable data and record results. If a material failure appears, stop distribution and follow the separately approved rollback/recovery plan without deleting histories or synchronization state.

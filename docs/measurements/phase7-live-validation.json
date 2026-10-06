@@ -179,7 +179,7 @@
       "providerConfigurationRechecked": false
     },
     "ordinaryInstallerUpgradeAndDefaultReinstall": {
-      "status": "owner_reported_install_login_pass_retention_unconfirmed",
+      "status": "owner_reported_pass",
       "candidateSourceHead": "7d1f29849fe63379330d38b5c91cbcbdd51a1cbb",
       "installerSha256": "0e96ee418ee50ab4cf1ff8db12d9142a9faee585623690590a4dbb5fad7e3a5b",
       "installerProvided": true,
@@ -189,25 +189,51 @@
       "route": "uninstall then install",
       "passwordLogin": "owner_reported_pass",
       "previousInstalledVersion": null,
-      "deleteAppDataUnchecked": null,
-      "previousHistoryRetained": null,
+      "deleteAppDataUnchecked": true,
+      "previousHistoryRetained": true,
       "originalDaysRetained": null,
-      "inPlaceReplacementObserved": false
+      "inPlaceReplacementObserved": false,
+      "subjectsAndCompletedSessionsRetained": true,
+      "authenticatedWorkspaceRestoredAutomatically": true,
+      "observationScope": "Owner Windows 11 / Stride 1.0.0 uninstall/install route; previous installed version and in-place replacement not supplied."
     },
     "actualUsedExpiredLink": {
-      "status": "not_observed",
-      "latestObservation": "No new confirmation email on successful password login.",
-      "originalConfirmationLinkReopened": null,
-      "observationIsPasswordLoginOnly": true
+      "status": "owner_reported_used_link_pass",
+      "reportedLocalDate": "2026-10-06",
+      "originalConfirmationLinkReopened": true,
+      "outcome": "Original signup email link reopened Stride web with the account already logged in.",
+      "normalWorkspaceAccess": true,
+      "freshSessionIssuanceObserved": null,
+      "errorGuidanceDisplayed": null,
+      "forcedExpiryTested": false
     },
     "androidPwa": {
-      "status": "not_yet_tested",
-      "installationExplained": "Production website installed through Chrome; no APK."
+      "status": "owner_reported_install_pass",
+      "reportedLocalDate": "2026-10-06",
+      "platformContext": "Android was the earlier available-device context; phone model/version not supplied.",
+      "installMethod": null,
+      "browserVersion": null,
+      "testedAppBuild": null,
+      "installationWorks": true,
+      "standalonePersistenceTested": null,
+      "physicalOfflineReconnectTested": null,
+      "physicalHostedUpdateTested": null
     },
-    "recommendation": "NO-GO FOR v1.0",
-    "openRequiredChecks": [
-      "ordinary upgrade/reinstall history preservation and default app-data choice",
-      "actual used/expired confirmation-link behavior"
-    ]
+    "recommendation": "GO FOR v1.0",
+    "openRequiredChecks": [],
+    "remainingObservationLimits": [
+      "phone standalone/offline/update checklist beyond installation",
+      "physical iPhone Safari",
+      "forced-expiry error screen or fresh session issuance on reused link",
+      "prior installed version/in-place ordinary installer replacement"
+    ],
+    "releaseActionsPerformed": {
+      "markReady": false,
+      "merge": false,
+      "tag": false,
+      "githubRelease": false,
+      "productionMigration": false,
+      "productionConfiguration": false
+    }
   }
 }
