@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { checkReleaseVersion } from "./release-version.mjs";
 import {
   publicBuildConfiguration,
   publicBuildEnvironment,
@@ -10,6 +11,7 @@ import {
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 try {
+  await checkReleaseVersion(root);
   const fallback = JSON.parse(
     await readFile(resolve(root, "config/supabase-public.json"), "utf8"),
   );

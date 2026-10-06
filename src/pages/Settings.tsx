@@ -47,8 +47,10 @@ export default function Settings() {
           );
           return;
         }
-      } catch (e) {
-        setError(String(e));
+      } catch {
+        setError(
+          "Unable to set up notifications. Check this device’s notification settings and try again, or turn this preference off.",
+        );
         return;
       }
     }
@@ -74,8 +76,10 @@ export default function Settings() {
         ),
       );
       setError("");
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
+    } catch {
+      setError(
+        "Unable to save the backup. Choose another location and try again. Your study data is unchanged.",
+      );
     }
   }
   async function importData() {
@@ -83,12 +87,27 @@ export default function Settings() {
       fileInput.current?.click();
       return;
     }
+    let text: string | null;
     try {
-      const text = await openDesktopBackup();
+      text = await openDesktopBackup();
+    } catch (error) {
+      setError(
+        error instanceof Error &&
+          error.message === "Backups must be smaller than 25 MB."
+          ? error.message
+          : "Unable to open the backup. Choose the file again and try importing it. Your study data is unchanged.",
+      );
+      return;
+    }
+    try {
       if (text !== null) setPending(parseBackup(text));
       setError("");
     } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
+      setError(
+        error instanceof Error
+          ? error.message
+          : "This backup could not be imported. Choose a Stride JSON export and try again.",
+      );
     }
   }
   return (
@@ -242,13 +261,28 @@ export default function Settings() {
             const file = e.target.files?.[0];
             e.target.value = "";
             if (!file) return;
+            if (file.size > 25 * 1024 * 1024) {
+              setError("Backups must be smaller than 25 MB.");
+              return;
+            }
+            let text: string;
             try {
-              if (file.size > 25 * 1024 * 1024)
-                throw new Error("Backups must be smaller than 25 MB.");
-              setPending(parseBackup(await file.text()));
+              text = await file.text();
+            } catch {
+              setError(
+                "Unable to read this backup. Choose the file again and try importing it.",
+              );
+              return;
+            }
+            try {
+              setPending(parseBackup(text));
               setError("");
             } catch (error) {
-              setError(error instanceof Error ? error.message : String(error));
+              setError(
+                error instanceof Error
+                  ? error.message
+                  : "This backup could not be imported. Choose a Stride JSON export and try again.",
+              );
             }
           }}
         />

@@ -1,21 +1,27 @@
-Stride 0.4.0 brings the indigo study workspace to Windows.
+# Stride 1.0.0 — candidate release notes
 
-### Install
+Stride brings account-based, local-first study tracking to Windows and the web. Publication requires the owner's approval and completion of the release gates; changing version metadata does not certify those gates.
 
-Download **Stride_0.4.0_x64-setup.exe**, run the installer, and open **Stride** from Start. No development server, Node.js, or Rust is needed. Windows 10/11 x64 only. The installer installs WebView2 if needed; that first-time runtime download requires internet access. Normal study tracking works offline.
+## Install and upgrade
 
-Alternatively, extract the portable ZIP and open `stride.exe` (requires WebView2 already installed). Both editions store data in your Windows user profile.
+Windows 10/11 x64. Download **Stride_1.0.0_x64-setup.exe**, or extract **Stride_1.0.0_Windows-x64-portable.zip** and open `stride.exe`. The installer can download WebView2 when missing; portable requires it already installed. Verify both downloads against `SHA256SUMS.txt`. Builds are unsigned.
 
-### What's new
+Export a JSON backup before upgrading and keep it outside the app profile. The ordinary application identifier and data profile are unchanged. Published v0.4.0 history was anonymous: the new account-required edition asks you to sign in and explicitly import that retained history. It is not imported automatically.
 
-- Reference-inspired dark workspace with indigo highlights and geometric mountain artwork.
-- Daily goal progress ring, streak summary, compact subject activity rows, and a session sidebar.
-- Recent sessions open their day's records; View all opens History.
-- Responsive layouts and light theme retained, alongside the web version.
-- Native backup dialogs, timer recovery, and single-instance Windows behavior preserved.
+## Study and synchronize
 
-### Your data
+- Subjects, stopwatch/countdown sessions, history, streaks, heatmaps, and insights.
+- Email/password account, confirmation, and separate local account workspaces.
+- Locally saved study actions, offline queue, and cloud synchronization of completed history and shared preferences.
+- Preserved conflicts with explicit version selection or **Keep both**.
+- Reviewed additive backup/legacy imports and local recovery-copy inspection/export.
+- Offline web shell and explicit updates that wait for unsaved work and timers.
+- Faster large-history views, practical keyboard fixes, and safe file-error messages.
 
-Existing desktop history remains in the same application profile. Export a backup before upgrading. To move history from the web version, use **Settings → Export JSON** there and **Settings → Import JSON** in the Windows app. Imports ask before replacing the destination data. No cloud synchronization is included.
+## Data and limits
 
-Builds are currently unsigned, so Windows may show an unknown-publisher warning. `SHA256SUMS.txt` contains checksums for these downloads. Source is MIT licensed.
+Active timers and recovery copies stay on their device. Sign-out hides history but preserves the local cache. Browser storage removal or **Delete app data** during uninstall can lose unsynced changes, timers, and local recovery copies. Synced completed history can download again after sign-in. Backups contain readable private study data.
+
+Phone installation and standalone behavior require the physical-device checklist. Notifications require the app to remain open. Large first syncs may take time. No change-feed/receipt pruning, database migration, or application identifier change is part of Phase 7.
+
+Read [data behavior](https://github.com/NotThatBoii/stride/blob/main/docs/DATA_AND_PRIVACY.md), [the release validation report](https://github.com/NotThatBoii/stride/blob/main/docs/PHASE_7_RELEASE.md), and [the reusable release checklist](https://github.com/NotThatBoii/stride/blob/main/docs/RELEASE_CHECKLIST.md). Use [GitHub Issues](https://github.com/NotThatBoii/stride/issues) for bugs without passwords, tokens, or private backups.

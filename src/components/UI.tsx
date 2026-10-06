@@ -25,6 +25,21 @@ export function Modal({
     const dialog = ref.current;
     const previous = document.activeElement as HTMLElement;
     dialog?.showModal();
+    // showModal moves focus after React's autoFocus. Focus the visible field
+    // here so keyboard shortcuts can accept typing as soon as they open.
+    const field =
+      dialog &&
+      Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'input:not([type="hidden"]):not([type="file"]), select, textarea',
+        ),
+      ).find(
+        (element) =>
+          element.tabIndex >= 0 &&
+          !element.matches(":disabled") &&
+          element.getClientRects().length > 0,
+      );
+    field?.focus();
     return () => {
       dialog?.close();
       previous?.focus();
@@ -37,6 +52,28 @@ export function Modal({
       onCancel={(e) => {
         e.preventDefault();
         onClose();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Tab") return;
+        const controls = Array.from(
+          event.currentTarget.querySelectorAll<HTMLElement>(
+            "button, a[href], input, select, textarea, [tabindex]",
+          ),
+        ).filter(
+          (element) =>
+            element.tabIndex >= 0 &&
+            !element.matches(":disabled") &&
+            element.getClientRects().length > 0,
+        );
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
       }}
     >
       <div className="dialog-heading">

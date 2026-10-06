@@ -3,6 +3,30 @@ import { ArrowRight, LoaderCircle } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { PwaUpdateNotice } from "./Pwa";
 
+function failedAccountCallback() {
+  const address = new URL(location.href);
+  const hash = new URLSearchParams(address.hash.slice(1));
+  const keys = ["error", "error_code", "error_description"];
+  if (
+    ![address.searchParams, hash].some((parameters) =>
+      keys.some((key) => parameters.get(key)),
+    )
+  )
+    return null;
+  // Capture fixed guidance without mutating the URL or rendering untrusted
+  // descriptions. Cleanup below waits for the signed-out entry state.
+  for (const key of keys) {
+    address.searchParams.delete(key);
+    hash.delete(key);
+  }
+  address.hash = hash.toString();
+  return {
+    url: address.pathname + address.search + address.hash,
+    message:
+      "This account link could not be used. It may have expired or already been opened. If you confirmed your email, sign in below. Otherwise, create your account again to request a fresh confirmation email.",
+  };
+}
+
 export default function AuthenticationScreen() {
   const {
     status,
@@ -17,11 +41,17 @@ export default function AuthenticationScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
-  const [localError, setLocalError] = useState("");
+  const [failedCallback] = useState(failedAccountCallback);
+  const [localError, setLocalError] = useState(failedCallback?.message ?? "");
   const [notice, setNotice] = useState("");
   const [reopenAvailable, setReopenAvailable] = useState(false);
   const busy = pending || pendingAction !== null;
   const signingOut = pendingAction === "sign_out";
+
+  useEffect(() => {
+    if (status === "signed_out" && failedCallback)
+      history.replaceState(history.state, "", failedCallback.url);
+  }, [status, failedCallback]);
 
   useEffect(() => {
     setReopenAvailable(false);

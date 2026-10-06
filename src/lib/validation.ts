@@ -140,7 +140,14 @@ export function validateData(value: unknown): Data {
   return data;
 }
 export function parseBackup(text: string): Data {
-  const value: unknown = JSON.parse(text);
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    throw new Error(
+      "This file is not valid JSON. Choose a Stride JSON export and try again.",
+    );
+  }
   const envelope = z
     .object({
       format: z.literal("stride"),

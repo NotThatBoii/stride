@@ -1,6 +1,21 @@
 name: Verify local Supabase integration
 
 on:
+  push:
+    branches: [main, codex/phase-7-release]
+    paths:
+      - .github/workflows/supabase-integration.yml
+      - package.json
+      - package-lock.json
+      - scripts/run-local-integration.mjs
+      - supabase/**
+      - src/lib/sync/**
+      - src/lib/local-database.ts
+      - src/auth/**
+      - tests/sync-e2e/**
+      - tests/sync-fixture.ts
+      - playwright.sync.config.ts
+      - vitest.integration.config.ts
   pull_request:
     branches: [main]
     paths:

@@ -1,0 +1,254 @@
+{
+  "measuredAt": "2026-10-05T00:19:17.389Z",
+  "sessions": 100,
+  "allocations": 120,
+  "browser": "chromium",
+  "version": "154.0.4258.53",
+  "mode": "Production minified build on loopback; synthetic account IndexedDB; intercepted Auth and 503 cloud; service workers blocked; no hosted latency or packaged-native claim.",
+  "seed": {
+    "existingDatabaseOpenMs": 1.2000000476837158,
+    "seedWriteMs": 10.299999952316284
+  },
+  "startup": {
+    "readyAt": 535,
+    "longTasks": [
+      76
+    ],
+    "databaseTransactions": [
+      {
+        "stores": [
+          "conflicts",
+          "meta",
+          "pendingOperations",
+          "preferences",
+          "recordRevisions",
+          "recoveryCopies",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncCursors",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 4.899999976158142
+      },
+      {
+        "stores": [
+          "meta",
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readwrite",
+        "durationMs": 3.3000000715255737
+      },
+      {
+        "stores": [
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 22.90000009536743
+      },
+      {
+        "stores": [
+          "pendingOperations"
+        ],
+        "mode": "readonly",
+        "durationMs": 11.899999976158142
+      },
+      {
+        "stores": [
+          "conflicts"
+        ],
+        "mode": "readonly",
+        "durationMs": 9.200000047683716
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 8.200000047683716
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 36.90000009536743
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.7000000476837158
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 2.700000047683716
+      },
+      {
+        "stores": [
+          "syncCursors"
+        ],
+        "mode": "readonly",
+        "durationMs": 2.399999976158142
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readwrite",
+        "durationMs": 1.5
+      },
+      {
+        "stores": [
+          "pendingOperations"
+        ],
+        "mode": "readonly",
+        "durationMs": 1
+      },
+      {
+        "stores": [
+          "conflicts"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.7000000476837158
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.6000000238418579
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.9000000953674316
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 85.10000002384186
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 2.399999976158142
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.6000000238418579
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.7000000476837158
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 0.5999999046325684
+      },
+      {
+        "stores": [
+          "syncMetadata"
+        ],
+        "mode": "readonly",
+        "durationMs": 1.7000000476837158
+      },
+      {
+        "stores": [
+          "conflicts",
+          "meta",
+          "pendingOperations",
+          "preferences",
+          "recordRevisions",
+          "recoveryCopies",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncCursors",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 1.600000023841858
+      },
+      {
+        "stores": [
+          "meta",
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "syncMetadata",
+          "timers"
+        ],
+        "mode": "readwrite",
+        "durationMs": 1.100000023841858
+      },
+      {
+        "stores": [
+          "preferences",
+          "sessions",
+          "slices",
+          "subjects",
+          "timers"
+        ],
+        "mode": "readonly",
+        "durationMs": 2
+      }
+    ],
+    "databaseQueries": {
+      "store.get": 18,
+      "index.getAll": 4,
+      "store.getAll": 3,
+      "store.openCursor": 4
+    },
+    "navigation": [
+      {
+        "duration": 95.40000009536743,
+        "domContentLoaded": 95.40000009536743
+      }
+    ]
+  },
+  "historyNavigationMs": 404,
+  "insightsNavigationMs": 239,
+  "dashboardNavigationMs": 100,
+  "warmHistoryNavigationMs": 68,
+  "warmInsightsNavigationMs": 43,
+  "longTasksAfterNavigationAndThreeIdleSeconds": [
+    76,
+    55
+  ],
+  "idleLongTasksMs": [],
+  "authenticationHttpRequests": 1,
+  "syncHttpRequests": 4
+}

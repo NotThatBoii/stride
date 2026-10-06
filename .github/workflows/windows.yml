@@ -1,7 +1,7 @@
 name: Build Windows app
 on:
   push:
-    branches: [main, codex/phase-6-hardening]
+    branches: [main, codex/phase-6-hardening, codex/phase-7-release]
     tags: ["v*"]
     paths:
       [
@@ -9,6 +9,9 @@ on:
         "src-tauri/**",
         "config/**",
         "scripts/**",
+        "docs/PORTABLE.txt",
+        "docs/RELEASE-NOTES.md",
+        "LICENSE",
         "public/**",
         "package*.json",
         "index.html",
@@ -24,6 +27,9 @@ on:
         "src-tauri/**",
         "config/**",
         "scripts/**",
+        "docs/PORTABLE.txt",
+        "docs/RELEASE-NOTES.md",
+        "LICENSE",
         "public/**",
         "package*.json",
         "index.html",
@@ -61,8 +67,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         shell: pwsh
         run: |
-          $version = (Get-Content package.json | ConvertFrom-Json).version
-          if ($env:GITHUB_REF_NAME -ne "v$version") { throw 'Release tag must match package version' }
+          node scripts/release-version.mjs $env:GITHUB_REF_NAME
+          if ($LASTEXITCODE -ne 0) { throw 'Release metadata or tag verification failed' }
       - name: Build configured Windows app
         shell: pwsh
         env:
@@ -74,14 +80,21 @@ jobs:
             npm run desktop:build
           }
           if ($LASTEXITCODE -ne 0) { throw 'Windows build failed' }
-      - name: Save Windows installer and standalone executable
+      - name: Prepare and verify Windows downloads
+        shell: pwsh
+        env:
+          STRIDE_NATIVE_CONFIG: ${{ matrix.config }}
+        run: ./scripts/package-windows.ps1 -NativeConfig $env:STRIDE_NATIVE_CONFIG
+      - name: Check corrupt and incomplete downloads are rejected
+        shell: pwsh
+        env:
+          STRIDE_NATIVE_CONFIG: ${{ matrix.config }}
+        run: ./scripts/test-windows-artifacts.ps1 -Directory work/windows-distribution -NativeConfig $env:STRIDE_NATIVE_CONFIG
+      - name: Save verified Windows downloads
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: |
-            src-tauri/target/release/bundle/nsis/*-setup.exe
-            src-tauri/target/release/stride.exe
-            src-tauri/Cargo.lock
+          path: work/windows-distribution/*
           if-no-files-found: error
           retention-days: 30
   publish:
@@ -103,19 +116,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $version = (Get-Content package.json | ConvertFrom-Json).version
-          New-Item -ItemType Directory -Path release-files, portable | Out-Null
-          $installer = @(Get-ChildItem windows-artifact -Recurse -File -Filter '*-setup.exe')
-          $executable = @(Get-ChildItem windows-artifact -Recurse -File -Filter 'stride.exe')
-          if ($installer.Count -ne 1 -or $executable.Count -ne 1) { throw 'Expected one release installer and executable' }
-          Copy-Item -LiteralPath $installer[0].FullName -Destination release-files/
-          Copy-Item -LiteralPath $executable[0].FullName -Destination portable/
-          Copy-Item LICENSE portable/
-          Copy-Item docs/PORTABLE.txt portable/README.txt
-          Compress-Archive -Path portable/* -DestinationPath "release-files/Stride_${version}_Windows-x64-portable.zip"
-          Get-ChildItem release-files -File | ForEach-Object {
-            $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower()
-            "$hash  $($_.Name)"
-          } | Set-Content release-files/SHA256SUMS.txt
-          $assets = (Get-ChildItem release-files -File).FullName
+          ./scripts/verify-windows-artifacts.ps1 -Directory windows-artifact -Version $version
+          $assets = (Get-ChildItem -LiteralPath windows-artifact -File).FullName
           gh release create $env:GITHUB_REF_NAME @assets --verify-tag --title "Stride $version for Windows" --notes-file docs/RELEASE-NOTES.md --latest
           if ($LASTEXITCODE -ne 0) { throw 'GitHub Release publication failed' }
