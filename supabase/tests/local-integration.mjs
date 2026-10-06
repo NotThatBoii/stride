@@ -1016,9 +1016,10 @@ test(
               ),
               first,
             );
-            // These deliberate SQL-looking IDs contain reserved URL grammar
-            // characters. Quote the filter literal before URLSearchParams encodes it.
-            const query = `select=id,name,description&${new URLSearchParams({ id: `eq."${id}"` })}`;
+            // Plain eq values are free-form, unlike in/and/or filter grammar.
+            // Match the official SDK: URLSearchParams encodes the raw value;
+            // adding double quotes would search for literal quotes in the ID.
+            const query = `select=id,name,description&${new URLSearchParams({ id: `eq.${id}` })}`;
             assert.deepEqual(
               assertOk(
                 await rows(user.token, "stride_subjects", query),
@@ -1054,7 +1055,7 @@ test(
               await rows(
                 bob.token,
                 "stride_subjects",
-                `select=name&${new URLSearchParams({ id: `eq."${id}"` })}`,
+                `select=name&${new URLSearchParams({ id: `eq.${id}` })}`,
               ),
               "Bob sentinel after attack",
             ),
@@ -1086,7 +1087,7 @@ test(
                 await rows(
                   user.token,
                   "stride_sessions",
-                  `select=session_title,notes&${new URLSearchParams({ id: `eq."${sessionId}"` })}`,
+                  `select=session_title,notes&${new URLSearchParams({ id: `eq.${sessionId}` })}`,
                 ),
                 "SQL-shaped session read",
               ),
