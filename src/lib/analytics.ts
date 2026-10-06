@@ -1,4 +1,6 @@
 import type { Segment, Session, Slice } from "../models";
+import { isCalendarDate } from "./calendar-validation";
+import { maximumSessionAllocations } from "./study-limits";
 export const dayKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 export const parseDay = (key: string) => new Date(`${key}T12:00:00`);
@@ -34,6 +36,14 @@ export const intensity = (seconds: number) =>
 export function splitSegments(id: string, segments: Segment[]): Slice[] {
   const days = new Map<string, number>();
   for (const segment of segments) {
+    if (
+      !Number.isFinite(segment.start) ||
+      !Number.isFinite(segment.end) ||
+      !Number.isFinite(new Date(segment.start).getTime()) ||
+      !Number.isFinite(new Date(segment.end).getTime()) ||
+      segment.end < segment.start
+    )
+      throw new Error("Invalid timer interval. Its stored copy is preserved.");
     let cursor = segment.start;
     while (cursor < segment.end) {
       const date = new Date(cursor);
@@ -44,6 +54,14 @@ export function splitSegments(id: string, segments: Segment[]): Slice[] {
       ).getTime();
       const end = Math.min(midnight, segment.end);
       const key = dayKey(date);
+      if (!Number.isFinite(end) || end <= cursor || !isCalendarDate(key))
+        throw new Error(
+          "Invalid timer interval. Its stored copy is preserved.",
+        );
+      if (!days.has(key) && days.size >= maximumSessionAllocations)
+        throw new Error(
+          "This timer spans more than 1,000 recorded days. Its stored copy and your backup are preserved; it cannot be saved as one session.",
+        );
       days.set(key, (days.get(key) ?? 0) + (end - cursor) / 1000);
       cursor = end;
     }

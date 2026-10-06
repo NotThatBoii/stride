@@ -835,6 +835,271 @@ test(
           assert.ok(["First", "Second"].includes(finalName));
         },
       );
+      await t.test(
+        "every study table denies direct writes and foreign reads; private tables and functions are not API routes",
+        async () => {
+          const beforeAlice = assertOk(
+            await pull(alice.token),
+            "access-matrix Alice feed",
+          );
+          const beforeBob = assertOk(
+            await pull(bob.token),
+            "access-matrix Bob feed",
+          );
+          for (const table of [
+            "stride_subjects",
+            "stride_sessions",
+            "stride_allocations",
+            "stride_preferences",
+          ]) {
+            const own = assertOk(
+              await rows(alice.token, table, "select=owner_id"),
+              `${table} own read`,
+            );
+            assert.ok(own.length > 0, `${table} fixture must contain own rows`);
+            assert.ok(
+              own.every((row) => row.owner_id === alice.id),
+              `${table} own scope`,
+            );
+            assert.deepEqual(
+              assertOk(
+                await rows(
+                  alice.token,
+                  table,
+                  `select=owner_id&${new URLSearchParams({ owner_id: `eq.${bob.id}` })}`,
+                ),
+                `${table} foreign filter`,
+              ),
+              [],
+            );
+            assertDenied(
+              await rows(undefined, table),
+              `${table} anonymous read`,
+            );
+            const directPath = `/rest/v1/${table}?${new URLSearchParams({ owner_id: `eq.${alice.id}` })}`;
+            for (const token of [undefined, alice.token]) {
+              assertDenied(
+                await request(`/rest/v1/${table}`, {
+                  method: "POST",
+                  token,
+                  body: { owner_id: bob.id },
+                }),
+                `${table} direct insert`,
+              );
+              assertDenied(
+                await request(directPath, {
+                  method: "PATCH",
+                  token,
+                  body: { owner_id: bob.id },
+                }),
+                `${table} direct update`,
+              );
+              assertDenied(
+                await request(directPath, {
+                  method: "DELETE",
+                  token,
+                }),
+                `${table} direct delete`,
+              );
+            }
+          }
+          const hiddenCore = await request(
+            "/rest/v1/rpc/get_sync_changes_core",
+            {
+              method: "POST",
+              token: alice.token,
+              headers: { "Content-Profile": "stride_private" },
+              body: { p_after: "0", p_limit: 100 },
+            },
+          );
+          assert.equal(
+            hiddenCore.data?.code,
+            "PGRST106",
+            "private RPC schema must stay unexposed",
+          );
+          for (const name of [
+            "get_sync_changes_core",
+            "apply_sync_operation_core",
+            "append_change",
+            "assert_allocation_total",
+            "check_allocation_total",
+          ]) {
+            const absent = await request(`/rest/v1/rpc/${name}`, {
+              method: "POST",
+              token: alice.token,
+              body: {},
+            });
+            assert.equal(
+              absent.status,
+              404,
+              `${name} must not be a public RPC route`,
+            );
+          }
+          assert.deepEqual(
+            assertOk(await pull(alice.token), "Alice after access denials"),
+            beforeAlice,
+          );
+          assert.deepEqual(
+            assertOk(await pull(bob.token), "Bob after access denials"),
+            beforeBob,
+          );
+        },
+      );
+
+      await t.test(
+        "malicious RPC arguments cannot alter feeds; SQL-shaped text and reused UUIDs remain account-scoped",
+        async () => {
+          const before = assertOk(
+            await pull(alice.token),
+            "malformed RPC start feed",
+          );
+          const invalidId = `${prefix}-malformed`;
+          const base = {
+            entity: "subject",
+            recordId: invalidId,
+            payload: subject(invalidId),
+          };
+          for (const input of [
+            { ...base, operationId: "not-a-uuid" },
+            { ...base, payload: { ...base.payload, owner_id: "not-a-uuid" } },
+            {
+              ...base,
+              payload: { ...base.payload, created_at: "2026-02-30T00:00:00Z" },
+            },
+            { ...base, revision: "9999999999999999999" },
+          ]) {
+            assertInvalid(
+              await apply(alice.token, input),
+              "malformed RPC value",
+            );
+            assert.deepEqual(
+              assertOk(await pull(alice.token), "feed after malformed RPC"),
+              before,
+            );
+          }
+          assertInvalid(
+            await pull(alice.token, "9999999999999999999"),
+            "overflowing cursor",
+          );
+          assert.deepEqual(
+            assertOk(await pull(alice.token), "feed after overflowing cursor"),
+            before,
+          );
+          const operationId = randomUUID();
+          const id = `${prefix}-sql'); DROP TABLE public.stride_subjects; --`;
+          const aliceInput = {
+            operationId,
+            entity: "subject",
+            recordId: id,
+            payload: {
+              ...subject(id, "'; DELETE FROM auth.users; --"),
+              description:
+                "SELECT * FROM stride_private.stride_sync_operations;",
+            },
+          };
+          const bobInput = {
+            ...aliceInput,
+            payload: subject(id, "Bob sentinel unchanged"),
+          };
+          for (const [user, input] of [
+            [alice, aliceInput],
+            [bob, bobInput],
+          ]) {
+            const first = assertOk(
+              await apply(user.token, input),
+              "SQL-shaped own subject",
+            );
+            assert.deepEqual(
+              assertOk(
+                await apply(user.token, input),
+                "same-account receipt replay",
+              ),
+              first,
+            );
+            // These deliberate SQL-looking IDs contain reserved URL grammar
+            // characters. Quote the filter literal before URLSearchParams encodes it.
+            const query = `select=id,name,description&${new URLSearchParams({ id: `eq."${id}"` })}`;
+            assert.deepEqual(
+              assertOk(
+                await rows(user.token, "stride_subjects", query),
+                "SQL-shaped own read",
+              ),
+              [
+                {
+                  id,
+                  name: input.payload.name,
+                  description: input.payload.description,
+                },
+              ],
+            );
+            const changes = assertOk(
+              await pull(user.token),
+              "SQL-shaped account feed",
+            ).changes.filter((change) => change.record_id === id);
+            assert.equal(changes.length, 1);
+            assert.equal(changes[0].payload.name, input.payload.name);
+          }
+          assertInvalid(
+            await apply(alice.token, {
+              ...aliceInput,
+              payload: {
+                ...aliceInput.payload,
+                name: "Changed under frozen UUID",
+              },
+            }),
+            "altered same-account UUID reuse",
+          );
+          assert.deepEqual(
+            assertOk(
+              await rows(
+                bob.token,
+                "stride_subjects",
+                `select=name&${new URLSearchParams({ id: `eq."${id}"` })}`,
+              ),
+              "Bob sentinel after attack",
+            ),
+            [{ name: "Bob sentinel unchanged" }],
+          );
+          const sessionOperationId = randomUUID();
+          const sessionId = `${prefix}-session'); SELECT pg_sleep(99); --`;
+          for (const user of [alice, bob]) {
+            const payload = sessionPayload(sessionId, id);
+            payload.session.session_title =
+              user === alice
+                ? "'; DROP TABLE public.stride_sessions; --"
+                : "Bob title sentinel";
+            payload.session.notes =
+              user === alice
+                ? "UPDATE auth.users SET id = NULL; -- quotes ' remain text"
+                : "Bob notes sentinel";
+            assertOk(
+              await apply(user.token, {
+                operationId: sessionOperationId,
+                entity: "session",
+                recordId: sessionId,
+                payload,
+              }),
+              "SQL-shaped own session",
+            );
+            assert.deepEqual(
+              assertOk(
+                await rows(
+                  user.token,
+                  "stride_sessions",
+                  `select=session_title,notes&${new URLSearchParams({ id: `eq."${sessionId}"` })}`,
+                ),
+                "SQL-shaped session read",
+              ),
+              [
+                {
+                  session_title: payload.session.session_title,
+                  notes: payload.session.notes,
+                },
+              ],
+            );
+          }
+        },
+      );
     } finally {
       const cleanup = await Promise.allSettled(users.map(deleteUser));
       for (const result of cleanup)

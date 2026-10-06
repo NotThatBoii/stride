@@ -82,19 +82,26 @@ export default function Focus({
     const total = elapsed(timer);
     if (total < 1) return;
     const end = segments.at(-1)?.end ?? Date.now();
-    const session = {
-      id: timer.id,
-      subject_id: timer.subjectId,
-      started_at: timer.startedAt,
-      ended_at: new Date(end).toISOString(),
-      duration_seconds: total,
-      session_title: reviewTitle,
-      notes: note,
-      mode: timer.mode,
-      completed: 1,
-    };
     if (
-      await act(() => saveSession(session, splitSegments(timer.id, segments)))
+      await act(async () => {
+        // Keep malformed or excessive recovered intervals inside the existing
+        // failure boundary. An unsuccessful save must retain the paused timer.
+        const slices = splitSegments(timer.id, segments);
+        await saveSession(
+          {
+            id: timer.id,
+            subject_id: timer.subjectId,
+            started_at: timer.startedAt,
+            ended_at: new Date(end).toISOString(),
+            duration_seconds: total,
+            session_title: reviewTitle,
+            notes: note,
+            mode: timer.mode,
+            completed: 1,
+          },
+          slices,
+        );
+      })
     ) {
       setReview(false);
       setNote("");

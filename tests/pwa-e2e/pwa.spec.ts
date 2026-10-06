@@ -125,6 +125,7 @@ test("Chromium parses an installable manifest and caches only the exact static s
     .getByLabel("Email", { exact: true })
     .fill("private-confirmation@example.test");
   await page.getByLabel("Password", { exact: true }).fill("password123");
+  await page.getByRole("checkbox").check();
   await page.locator(".account-form button").click();
   await expect(
     page.getByText("Check your email to confirm your account, then sign in."),

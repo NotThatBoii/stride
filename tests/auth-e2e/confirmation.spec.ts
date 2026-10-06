@@ -10,7 +10,7 @@ for (const source of ["hash", "query"] as const) {
   }) => {
     const server = await mockAuth(page);
     const failure =
-      "error=access_denied&error_code=otp_expired&error_description=SELECT+private_test_marker";
+      "error=access_denied&error_code=otp_expired&error_description=SELECT+private_test_marker&access_token=private_callback_token&refresh_token=private_callback_refresh";
     await page.goto(
       source === "hash"
         ? `/?from=confirmation#view=signup&${failure}`
@@ -27,6 +27,7 @@ for (const source of ["hash", "query"] as const) {
     );
     expect(cleaned.searchParams.has("error")).toBe(false);
     expect(cleaned.hash).not.toContain("error");
+    expect(page.url()).not.toContain("private_callback");
     // An already confirmed account can still sign in after a used/expired link.
     await signIn(page);
     await expect(
@@ -68,6 +69,68 @@ test("a valid confirmation callback is consumed by the official SDK and restores
   ).toBeVisible();
   await expect(page.locator("body")).not.toContainText(linkMessage);
 });
+
+test("a successful query confirmation consumes credentials before cleaning the URL and never follows user redirect parameters", async ({
+  page,
+}) => {
+  await mockAuth(page);
+  const encoded = (value: object) =>
+    Buffer.from(JSON.stringify(value)).toString("base64url");
+  const token = `${encoded({ alg: "HS256", typ: "JWT" })}.${encoded({ sub: users["first@example.test"], role: "authenticated", aud: "authenticated", exp: Math.floor(Date.now() / 1000) + 3600 })}.test`;
+  const callback = new URLSearchParams({
+    access_token: token,
+    refresh_token: `refresh-${users["first@example.test"]}`,
+    expires_in: "3600",
+    token_type: "bearer",
+    type: "signup",
+    from: "confirmation",
+    next: "https://malicious.example/",
+    redirect_to: "javascript:alert(1)",
+  });
+  await page.goto(`/?${callback}#/Home`);
+  await expect(
+    page.getByRole("heading", { name: "What are you learning?" }),
+  ).toBeVisible();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.has("access_token"))
+    .toBe(false);
+  const cleaned = new URL(page.url());
+  expect(cleaned.origin).toBe("http://127.0.0.1:1421");
+  expect(cleaned.searchParams.has("refresh_token")).toBe(false);
+  expect(cleaned.searchParams.get("from")).toBe("confirmation");
+  expect(cleaned.searchParams.get("next")).toBe("https://malicious.example/");
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "What are you learning?" }),
+  ).toBeVisible();
+});
+
+for (const source of ["query", "hash"] as const) {
+  test(`malformed ${source} credentials are removed after SDK processing without exposing a workspace`, async ({
+    page,
+  }) => {
+    const server = await mockAuth(page);
+    const credentials =
+      "access_token=private_invalid_token&refresh_token=private_invalid_refresh&expires_in=3600&token_type=bearer";
+    await page.goto(
+      source === "query"
+        ? `/?from=confirmation&${credentials}#/Home`
+        : `/?from=confirmation#view=signup&${credentials}`,
+    );
+    await expect(page.locator(".auth-screen")).toBeVisible();
+    await expect.poll(() => page.url().includes("private_invalid")).toBe(false);
+    const cleaned = new URL(page.url());
+    expect(cleaned.searchParams.get("from")).toBe("confirmation");
+    if (source === "query") expect(cleaned.hash).toBe("#/Home");
+    else
+      expect(new URLSearchParams(cleaned.hash.slice(1)).get("view")).toBe(
+        "signup",
+      );
+    await expect(page.locator("body")).not.toContainText("private_invalid");
+    await expect(page.locator(".app, .onboarding")).toHaveCount(0);
+    expectNoStudySync(server.calls);
+  });
+}
 
 test("failed callback parameters remain intact during delayed restoration and clean up after it settles", async ({
   page,

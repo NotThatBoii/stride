@@ -17,6 +17,7 @@ import {
 import type { Subject } from "../models";
 import { createOptionalSupabaseClient } from "../lib/supabase";
 import { AuthSessionManager, type AuthGateway } from "./auth-session";
+import { consentRequiredMessage, currentSignupConsent } from "../lib/legal";
 
 const accountA = "11111111-1111-4111-8111-111111111111";
 const accountB = "22222222-2222-4222-8222-222222222222";
@@ -147,7 +148,11 @@ describe("required Supabase configuration", () => {
       state.signIn("a@example.test", "test-password"),
     ).rejects.toThrow("Authentication is unavailable in this build");
     await expect(
-      state.signUp("a@example.test", "test-password"),
+      state.signUp(
+        "a@example.test",
+        "test-password",
+        currentSignupConsent(true),
+      ),
     ).rejects.toThrow("Authentication is unavailable in this build");
     expect(state.getSnapshot()).toMatchObject({
       status: "disabled",
@@ -256,6 +261,7 @@ describe("auth and local workspace selection", () => {
     const result = await state.signUp(
       " student@example.test ",
       "test-password",
+      currentSignupConsent(true),
     );
     expect(result).toEqual({ needsEmailConfirmation: true });
     expect(fake.auth.signUp).toHaveBeenCalledWith({
@@ -293,7 +299,11 @@ describe("auth and local workspace selection", () => {
       state.signIn("b@example.test", "test-password"),
     ).rejects.toThrow("An account request is already in progress.");
     await expect(
-      state.signUp("b@example.test", "test-password"),
+      state.signUp(
+        "b@example.test",
+        "test-password",
+        currentSignupConsent(true),
+      ),
     ).rejects.toThrow("An account request is already in progress.");
     expect(fake.auth.signInWithPassword).toHaveBeenCalledTimes(1);
     expect(fake.auth.signUp).not.toHaveBeenCalled();
@@ -389,12 +399,15 @@ describe("auth and local workspace selection", () => {
     fake.auth.signOut = vi.fn(async () => ({
       error: new Error("Network unavailable"),
     }));
-    await expect(state.signOut()).rejects.toThrow("Network unavailable");
+    await expect(state.signOut()).rejects.toThrow(
+      "Check your connection and try again.",
+    );
     fake.emit("TOKEN_REFRESHED", session(accountA));
     expect(state.getSnapshot()).toMatchObject({
       status: "signed_out",
       user: null,
-      error: "Network unavailable",
+      error:
+        "Unable to connect to your account. Check your connection and try again.",
     });
     expect(getActiveWorkspace().accountId).toBeNull();
   });
@@ -427,7 +440,11 @@ describe("auth and local workspace selection", () => {
         error: message,
       });
       await expect(
-        state.signUp("a@example.test", "test-password"),
+        state.signUp(
+          "a@example.test",
+          "test-password",
+          currentSignupConsent(true),
+        ),
       ).rejects.toThrow(message);
       expect(state.getSnapshot()).toMatchObject({
         status: "signed_out",
@@ -562,7 +579,9 @@ describe("auth and local workspace selection", () => {
     expect(getActiveWorkspace().accountId).toBeNull();
     expect(storage.values.has(credentialKey)).toBe(true);
     expect(storage.getItem(`${credentialKey}:signed-out`)).toBe("1");
-    await expect(pending).rejects.toThrow("Offline during sign-out");
+    await expect(pending).rejects.toThrow(
+      "Authentication failed. Please try again.",
+    );
     expect(storage.values.has(credentialKey)).toBe(false);
 
     // Model an SDK refresh that writes its old in-memory session afterward.
@@ -573,7 +592,9 @@ describe("auth and local workspace selection", () => {
     await Promise.resolve();
     expect(reloaded.getSnapshot().status).toBe("signed_out");
     expect(getActiveWorkspace().accountId).toBeNull();
-    expect(fake.auth.getSession).toHaveBeenCalledTimes(sessionReads);
+    // The SDK still settles callback initialization, but its saved identity
+    // cannot override the authoritative signed-out marker.
+    expect(fake.auth.getSession).toHaveBeenCalledTimes(sessionReads + 1);
     fake.emit("TOKEN_REFRESHED", session(accountA));
     expect(getActiveWorkspace().accountId).toBeNull();
 
@@ -597,5 +618,138 @@ describe("auth and local workspace selection", () => {
     expect(state.getSnapshot().status).toBe("signed_out");
     expect(getActiveWorkspace().accountId).toBeNull();
     expect(storage.getItem(`${credentialKey}:signed-out`)).toBe("1");
+  });
+
+  it("blocks missing, malformed, unchecked and stale-version consent before SDK signup", async () => {
+    const fake = fakeAuth();
+    const state = manager(fake.gateway);
+    await Promise.resolve();
+    const current = currentSignupConsent(true);
+    for (const consent of [
+      undefined,
+      null,
+      true,
+      { ...current, accepted: "true" },
+      currentSignupConsent(false),
+      { ...current, termsVersion: "old" },
+      { ...current, privacyVersion: "old" },
+    ]) {
+      await expect(
+        state.signUp("a@example.test", "test-password", consent as any),
+      ).rejects.toThrow(consentRequiredMessage);
+    }
+    expect(fake.auth.signUp).not.toHaveBeenCalled();
+    expect(state.getSnapshot().status).toBe("signed_out");
+    expect(getActiveWorkspace().accountId).toBeNull();
+  });
+
+  it("redacts unknown Auth messages from thrown errors and snapshots for every account action", async () => {
+    const fake = fakeAuth();
+    const state = manager(fake.gateway);
+    await Promise.resolve();
+    const marker =
+      "private-test-password Bearer private-test-token refresh_token=private-test-refresh";
+    const failure = new AuthApiError(marker, 400, "unknown_auth_failure");
+    fake.auth.signInWithPassword = vi.fn(async () => ({
+      data: { user: null, session: null },
+      error: failure,
+    }));
+    fake.auth.signUp = vi.fn(async () => ({
+      data: { user: null, session: null },
+      error: failure,
+    }));
+    fake.auth.signOut = vi.fn(async () => ({ error: failure }));
+    for (const request of [
+      () => state.signIn("a@example.test", "test-password"),
+      () =>
+        state.signUp(
+          "a@example.test",
+          "test-password",
+          currentSignupConsent(true),
+        ),
+      () => state.signOut(),
+    ]) {
+      await expect(request()).rejects.toThrow(
+        "Authentication failed. Please try again.",
+      );
+      expect(state.getSnapshot().error).toBe(
+        "Authentication failed. Please try again.",
+      );
+      expect(JSON.stringify(state.getSnapshot())).not.toContain(marker);
+    }
+  });
+
+  it("maps known Auth categories without displaying their server diagnostic message", async () => {
+    const fake = fakeAuth();
+    const state = manager(fake.gateway);
+    await Promise.resolve();
+    fake.auth.signInWithPassword = vi.fn(async () => ({
+      data: { user: null, session: null },
+      error: new AuthApiError(
+        "private-test-diagnostic",
+        400,
+        "email_not_confirmed",
+      ),
+    }));
+    await expect(
+      state.signIn("a@example.test", "test-password"),
+    ).rejects.toThrow("Email not confirmed");
+    expect(state.getSnapshot().error).toBe("Email not confirmed");
+  });
+
+  it("keeps callback cleanup pending until SDK session initialization settles despite an early Auth event", async () => {
+    const fake = fakeAuth();
+    let finish!: (value: {
+      data: { session: Session | null };
+      error: Error | null;
+    }) => void;
+    fake.auth.getSession = vi.fn(
+      () =>
+        new Promise<{ data: { session: Session | null }; error: Error | null }>(
+          (resolve) => {
+            finish = resolve;
+          },
+        ),
+    );
+    const state = manager(fake.gateway);
+    await Promise.resolve();
+    fake.emit("SIGNED_IN", session(accountA));
+    expect(state.getSnapshot().status).toBe("signed_in");
+    expect(state.getSnapshot().callbackInitializationSettled).toBe(false);
+    finish({ data: { session: session(accountA) }, error: null });
+    await vi.waitFor(() =>
+      expect(state.getSnapshot().callbackInitializationSettled).toBe(true),
+    );
+  });
+
+  it("awaits SDK initialization behind a stored sign-out barrier without restoring the workspace", async () => {
+    const fake = fakeAuth(session(accountA));
+    const storage = memoryStorage();
+    storage.setItem(`${credentialKey}:signed-out`, "1");
+    let finish!: (value: {
+      data: { session: Session | null };
+      error: Error | null;
+    }) => void;
+    fake.auth.getSession = vi.fn(
+      () =>
+        new Promise<{ data: { session: Session | null }; error: Error | null }>(
+          (resolve) => {
+            finish = resolve;
+          },
+        ),
+    );
+    const state = manager(fake.gateway, credentialKey, storage);
+    await Promise.resolve();
+    expect(fake.auth.getSession).toHaveBeenCalledTimes(1);
+    expect(state.getSnapshot()).toMatchObject({
+      status: "signed_out",
+      callbackInitializationSettled: false,
+    });
+    finish({ data: { session: session(accountA) }, error: null });
+    await vi.waitFor(() =>
+      expect(state.getSnapshot().callbackInitializationSettled).toBe(true),
+    );
+    expect(state.getSnapshot().status).toBe("signed_out");
+    expect(getActiveWorkspace().accountId).toBeNull();
   });
 });

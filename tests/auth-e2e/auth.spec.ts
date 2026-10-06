@@ -194,6 +194,7 @@ test("sign-up validation and email confirmation keep the user outside the app", 
       .evaluate((input: HTMLInputElement) => input.validity.valid),
   ).toBe(false);
   await page.getByLabel("Email", { exact: true }).fill("new@example.test");
+  await page.getByRole("checkbox").check();
   await page.locator(".account-form button").click();
   await expect(page.getByRole("status")).toContainText("Check your email");
   await expect(page.locator(".app, .onboarding")).toHaveCount(0);
@@ -226,6 +227,7 @@ test("a sign-up response containing an official session opens authenticated onbo
     .getByRole("group", { name: "Account action" })
     .getByRole("button", { name: "Create account" })
     .click();
+  await page.getByRole("checkbox").check();
   await submitCredentials(page);
   await expect(
     page.getByRole("heading", { name: "What are you learning?" }),

@@ -2,6 +2,12 @@ import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { PwaUpdateNotice } from "./Pwa";
+import { LegalDialog, LegalLink, LegalLinks } from "./LegalDocuments";
+import {
+  consentRequiredMessage,
+  currentSignupConsent,
+  type LegalDocumentId,
+} from "../lib/legal";
 
 function failedAccountCallback() {
   const address = new URL(location.href);
@@ -13,18 +19,9 @@ function failedAccountCallback() {
     )
   )
     return null;
-  // Capture fixed guidance without mutating the URL or rendering untrusted
-  // descriptions. Cleanup below waits for the signed-out entry state.
-  for (const key of keys) {
-    address.searchParams.delete(key);
-    hash.delete(key);
-  }
-  address.hash = hash.toString();
-  return {
-    url: address.pathname + address.search + address.hash,
-    message:
-      "This account link could not be used. It may have expired or already been opened. If you confirmed your email, sign in below. Otherwise, create your account again to request a fresh confirmation email.",
-  };
+  // Capture guidance before central cleanup, without copying server text or
+  // holding a credential-bearing URL in component state.
+  return "This account link could not be used. It may have expired or already been opened. If you confirmed your email, sign in below. Otherwise, create your account again to request a fresh confirmation email.";
 }
 
 export default function AuthenticationScreen() {
@@ -42,16 +39,21 @@ export default function AuthenticationScreen() {
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [failedCallback] = useState(failedAccountCallback);
-  const [localError, setLocalError] = useState(failedCallback?.message ?? "");
+  const [localError, setLocalError] = useState(failedCallback ?? "");
+  const [accepted, setAccepted] = useState(false);
+  const [consentError, setConsentError] = useState(false);
+  const [legalDocument, setLegalDocument] = useState<{
+    id: LegalDocumentId;
+    opener: HTMLElement;
+  } | null>(null);
   const [notice, setNotice] = useState("");
   const [reopenAvailable, setReopenAvailable] = useState(false);
   const busy = pending || pendingAction !== null;
   const signingOut = pendingAction === "sign_out";
 
-  useEffect(() => {
-    if (status === "signed_out" && failedCallback)
-      history.replaceState(history.state, "", failedCallback.url);
-  }, [status, failedCallback]);
+  function openLegal(documentId: LegalDocumentId, opener: HTMLElement) {
+    setLegalDocument({ id: documentId, opener });
+  }
 
   useEffect(() => {
     setReopenAvailable(false);
@@ -63,6 +65,8 @@ export default function AuthenticationScreen() {
   function changeMode(next: typeof mode) {
     setMode(next);
     setPassword("");
+    setAccepted(false);
+    setConsentError(false);
     setLocalError("");
     setNotice("");
     clearError();
@@ -71,6 +75,11 @@ export default function AuthenticationScreen() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || status === "disabled") return;
+    if (mode === "sign_up" && accepted !== true) {
+      setConsentError(true);
+      setLocalError(consentRequiredMessage);
+      return;
+    }
     setPending(true);
     setLocalError("");
     setNotice("");
@@ -79,7 +88,12 @@ export default function AuthenticationScreen() {
       if (mode === "sign_in") {
         await signIn(email.trim(), password);
       } else {
-        const result = await signUp(email.trim(), password);
+        const result = await signUp(
+          email.trim(),
+          password,
+          currentSignupConsent(accepted),
+        );
+        setAccepted(false);
         if (result.needsEmailConfirmation) {
           setMode("sign_in");
           setNotice("Check your email to confirm your account, then sign in.");
@@ -183,12 +197,49 @@ export default function AuthenticationScreen() {
                 />
               </label>
               {mode === "sign_up" && (
-                <small id="auth-password-hint" className="hint">
-                  Use at least 6 characters.
-                </small>
+                <>
+                  <small id="auth-password-hint" className="hint">
+                    Use at least 6 characters.
+                  </small>
+                  <label className="signup-consent" htmlFor="signup-consent">
+                    <input
+                      id="signup-consent"
+                      type="checkbox"
+                      required
+                      checked={accepted}
+                      disabled={busy}
+                      aria-invalid={consentError || undefined}
+                      aria-describedby={
+                        consentError ? "auth-account-error" : undefined
+                      }
+                      onInvalid={(event) => {
+                        event.preventDefault();
+                        setConsentError(true);
+                        setLocalError(consentRequiredMessage);
+                        event.currentTarget.focus();
+                      }}
+                      onChange={(event) => {
+                        setAccepted(event.target.checked);
+                        setConsentError(false);
+                        if (localError === consentRequiredMessage)
+                          setLocalError("");
+                      }}
+                    />
+                    <span>
+                      I agree to the{" "}
+                      <LegalLink documentId="terms" onOpen={openLegal} /> and
+                      acknowledge the{" "}
+                      <LegalLink documentId="privacy" onOpen={openLegal} />.
+                    </span>
+                  </label>
+                </>
               )}
               {(localError || error) && (
-                <p className="error account-message" role="alert">
+                <p
+                  id="auth-account-error"
+                  className="error account-message"
+                  role="alert"
+                >
                   {localError || error}
                 </p>
               )}
@@ -243,8 +294,18 @@ export default function AuthenticationScreen() {
             </p>
           </>
         )}
+        {(mode !== "sign_up" || status === "disabled") && (
+          <LegalLinks onOpen={openLegal} />
+        )}
       </main>
       <footer>Build consistency, one session at a time.</footer>
+      {legalDocument && (
+        <LegalDialog
+          documentId={legalDocument.id}
+          returnFocusTo={legalDocument.opener}
+          onClose={() => setLegalDocument(null)}
+        />
+      )}
     </div>
   );
 }
