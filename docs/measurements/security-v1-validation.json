@@ -456,5 +456,83 @@
     "high": 0,
     "critical": 0,
     "total": 0
+  },
+  "frozenRuntimeCommit": "d3f472a9a5efe9cef58e5cae21318154eb996e49",
+  "verifiedSourceAndIntegrationTestCommit": "7d7f5ace280488877e7ae111428e97f6bac89a1a",
+  "completedCI": {
+    "frontend": {
+      "runId": 37508043377,
+      "conclusion": "success",
+      "standardBrowserPassed": 92,
+      "pwaSkipped": 1
+    },
+    "integration": {
+      "runId": 37508043287,
+      "conclusion": "success",
+      "sqlPassed": 16,
+      "httpPassedIncludingParent": 11,
+      "httpNestedPassed": 10,
+      "sdkPassed": 6,
+      "cleanupPassed": true
+    },
+    "windows": {
+      "runId": 37508043316,
+      "ordinary": "success",
+      "validation": "success",
+      "publish": "skipped",
+      "auditedPackagesReachableOnWindows": false
+    }
+  },
+  "windowsPackageInspection": {
+    "recordedAt": "2026-10-06T18:06:14.7736763+00:00",
+    "sourceCommit": "d3f472a9a5efe9cef58e5cae21318154eb996e49",
+    "runId": 37507409433,
+    "artifactId": 11433240213,
+    "githubArchiveDigestVerified": true,
+    "x64VersionZipContentsAndChecksumsVerified": true,
+    "files": [
+      {
+        "name": "SHA256SUMS.txt",
+        "bytes": 199,
+        "sha256": "6b0c5f41bd7e670d46416851def22f0a3745698dc87899b5bc318a75beb89a1b"
+      },
+      {
+        "name": "Stride_1.0.0_Windows-x64-portable.zip",
+        "bytes": 2619323,
+        "sha256": "bcf4d4bf9b4421379fe40e7f78b3bc5bedb925ae85347ee145e9ad2d25625c1f"
+      },
+      {
+        "name": "Stride_1.0.0_x64-setup.exe",
+        "bytes": 2040390,
+        "sha256": "4b41be921b7cf0a35a518b4d82456b81438722dcd043b40d4668797a9dd3c144"
+      }
+    ],
+    "portableRawStringPatternCounts": {
+      "supabaseSecret": 0,
+      "githubToken": 0,
+      "jwt": 0,
+      "privateKey": 0,
+      "databaseCredentialUrl": 0,
+      "appTestHooks": 0
+    },
+    "signingStatus": "NotSigned",
+    "executed": false,
+    "scope": "Downloaded ordinary CI package; byte integrity, PE/version/ZIP metadata and raw strings only. Embedded frontend guard also passed in CI; compressed binary contents are not comprehensively decoded. No installation or personal profile access."
+  },
+  "originReadonly": {
+    "measuredAt": "2026-10-06T17:52:33.011Z",
+    "scope": "Read-only public web headers and zero-row anonymous request with an untrusted Origin; no writes or settings changes",
+    "web": {
+      "status": 200,
+      "contentSecurityPolicy": null,
+      "frameOptions": null,
+      "contentTypeOptions": "nosniff",
+      "referrerPolicy": "strict-origin-when-cross-origin"
+    },
+    "supabase": {
+      "status": 401,
+      "errorCode": "42501",
+      "allowOrigin": "https://untrusted.example"
+    }
   }
 }
