@@ -15,6 +15,8 @@ This branch prepares **1.0.0**. It is a release candidate until its [release gat
 
 Create an email/password account, confirm the email, then sign in. An account is required to open a workspace. If confirmation mail does not arrive, check spam and report the problem; do not clear your study data to troubleshoot sign-in.
 
+Signup requires an unchecked agreement to the [Terms of Service](docs/TERMS_OF_SERVICE.md) and acknowledgment of the [Data & Privacy Notice](docs/DATA_AND_PRIVACY.md), both version **2026-10-06**. Read either document directly from the signup screen or account settings. Existing accounts can sign in normally. The checkbox is an application requirement; durable server receipt recording remains a [proposal awaiting owner approval](docs/proposals/CONSENT_RECORDING.md).
+
 Study actions save locally first. When connected, Stride synchronizes subjects, completed sessions, their recorded study days, and shared study preferences. Sign into the same account on another device to receive that history. **Settings → Cloud synchronization** shows syncing, pending changes, conflicts, and the last successful sync. Wait for synchronization to finish before retiring a device.
 
 You can continue studying offline after an eligible saved session restores. First sign-in and expired sessions that need renewal require internet access. Offline changes queue until reconnect. A running or paused timer belongs to its device and does not appear on another device until saved as a completed session. Notifications require Stride to remain open.
@@ -32,6 +34,8 @@ After **Settings** reports the offline shell is ready, the app can reopen its sa
 Use **Settings → Export JSON** regularly, especially before upgrading, clearing site data, uninstalling, or moving computers. Store exports somewhere outside the app profile. They contain readable study data and notes; keep them private.
 
 **Import JSON** reviews a valid backup, requires a new backup download, reconciles cloud history, then adds records. Identical records are deduplicated; different versions need your choice. Unrelated account history is retained. Imported timers restore paused and do not replace an existing timer. Finish or discard your current timer before importing.
+
+Imports are limited to **25 MiB**, checked before reading the file. A reference backup containing 10,000 sessions fits, but text-heavy valid exports can exceed the limit. Check backup size and import compatibility before retiring the original device.
 
 An older anonymous workspace offers **Import into my account** or **Keep it stored for later** after sign-in. Import is explicit and retains the source. If two devices edit the same record, review the preserved versions and choose one or **Keep both**. **Settings → Recovery and sync issues** lets you inspect and export preserved copies and changes needing attention. Keep a backup before repair.
 
@@ -55,10 +59,13 @@ npm ci --legacy-peer-deps
 npm test
 npm run test:release-config
 npm run test:db
+npm run test:consent-proposal
 npm run build
 ```
 
 Development configuration and architecture live in [Auth setup](docs/PHASE_4_AUTH.md), [synchronization](docs/PHASE_5_SYNC.md), [data safety](docs/PHASE_7_DATA_SAFETY.md), and [performance evidence](docs/PHASE_6_PERFORMANCE.md). The [release checklist](docs/RELEASE_CHECKLIST.md) lists the complete browser, integration, package, and release checks. Tests use disposable contexts and databases, never a personal study profile. Production wrappers embed only the checked-in intended public Supabase configuration and scan the compiled output.
+
+The [v1 security audit](docs/SECURITY_AUDIT_V1.md) records demonstrated fixes, remaining limits, dependency results, and approval boundaries. The consent proposal test uses an isolated PostgreSQL engine; it does not apply a hosted migration.
 
 ## After v1.0
 

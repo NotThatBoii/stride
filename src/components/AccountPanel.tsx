@@ -1,12 +1,18 @@
 import { useId, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { useStride } from "../state";
+import { LegalDialog, LegalLinks } from "./LegalDocuments";
+import type { LegalDocumentId } from "../lib/legal";
 
 export function AccountPanel() {
   const { user, error, signOut, clearError } = useAuth();
   const { data } = useStride();
   const headingId = useId();
   const [pending, setPending] = useState(false);
+  const [legalDocument, setLegalDocument] = useState<{
+    id: LegalDocumentId;
+    opener: HTMLElement;
+  } | null>(null);
 
   async function leaveAccount() {
     if (pending) return;
@@ -58,6 +64,14 @@ export function AccountPanel() {
         <p className="error account-message" role="alert">
           {error}
         </p>
+      )}
+      <LegalLinks onOpen={(id, opener) => setLegalDocument({ id, opener })} />
+      {legalDocument && (
+        <LegalDialog
+          documentId={legalDocument.id}
+          returnFocusTo={legalDocument.opener}
+          onClose={() => setLegalDocument(null)}
+        />
       )}
     </section>
   );

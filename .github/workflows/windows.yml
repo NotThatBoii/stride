@@ -11,6 +11,8 @@ on:
         "scripts/**",
         "docs/PORTABLE.txt",
         "docs/RELEASE-NOTES.md",
+        "docs/TERMS_OF_SERVICE.md",
+        "docs/DATA_AND_PRIVACY.md",
         "LICENSE",
         "public/**",
         "package*.json",
@@ -29,6 +31,8 @@ on:
         "scripts/**",
         "docs/PORTABLE.txt",
         "docs/RELEASE-NOTES.md",
+        "docs/TERMS_OF_SERVICE.md",
+        "docs/DATA_AND_PRIVACY.md",
         "LICENSE",
         "public/**",
         "package*.json",
@@ -63,6 +67,16 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npm test
       - run: npm run test:release-config
+      - name: Inspect audited Rust dependencies on the Windows target
+        shell: pwsh
+        run: |
+          $tree = @(cargo tree --locked --manifest-path src-tauri/Cargo.toml --target x86_64-pc-windows-msvc --prefix none --format '{p}')
+          if ($LASTEXITCODE -ne 0) { throw 'Windows dependency tree inspection failed' }
+          foreach ($package in @('glib v0.18.5', 'proc-macro-error v1.0.4')) {
+            $reachable = @($tree | Where-Object { $_ -eq $package -or $_ -eq "$package (*)" }).Count -gt 0
+            Write-Output "Audited package $package reachable on Windows target: $reachable"
+            if ($reachable) { Write-Warning 'An audited package is reachable; review its advisory before release.' }
+          }
       - name: Check release version
         if: startsWith(github.ref, 'refs/tags/')
         shell: pwsh

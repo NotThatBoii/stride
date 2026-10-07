@@ -9,6 +9,8 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { selectWorkspace } from "../lib/local-database";
 import { supabase, supabaseAuthStorageKey } from "../lib/supabase";
+import { cleanedAuthCallbackUrl } from "../lib/auth-callback";
+import type { SignupConsent } from "../lib/legal";
 import {
   AuthSessionManager,
   type AuthAction,
@@ -24,6 +26,7 @@ interface AuthContextValue {
   signUp(
     email: string,
     password: string,
+    consent: SignupConsent,
   ): Promise<{ needsEmailConfirmation: boolean }>;
   signOut(): Promise<void>;
   canReopenSignIn(): boolean;
@@ -47,6 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     manager.start();
     return () => manager.stop();
   }, [manager]);
+
+  useEffect(() => {
+    if (!snapshot.callbackInitializationSettled) return;
+    const cleaned = cleanedAuthCallbackUrl(location.href);
+    if (cleaned !== null) history.replaceState(history.state, "", cleaned);
+  }, [snapshot.callbackInitializationSettled]);
 
   if (snapshot.status === "restoring")
     return (

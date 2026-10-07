@@ -1,0 +1,538 @@
+{
+  "recordedAt": "2026-10-06T17:51:24.031Z",
+  "baselineCommit": "cfe69ba329521f379c7547f444af2935afd5440c",
+  "candidate": "Frozen codex/v1-security-hardening source; PR identifies the tested source commit",
+  "scope": "Local production loopback/Edge, synthetic account, intercepted Auth/RPC with isolated SQL; no hosted, physical-phone or native timing claim",
+  "suites": [
+    {
+      "suite": "test",
+      "baselinePassed": 181,
+      "passed": 197,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:40:34.6040253+00:00",
+      "finishedUtc": "2026-10-06T17:40:41.5226208+00:00"
+    },
+    {
+      "suite": "test:release-config",
+      "baselinePassed": 6,
+      "passed": 6,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:40:41.5795712+00:00",
+      "finishedUtc": "2026-10-06T17:40:42.1307157+00:00"
+    },
+    {
+      "suite": "test:db",
+      "baselinePassed": 13,
+      "passed": 16,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:40:42.1419311+00:00",
+      "finishedUtc": "2026-10-06T17:41:06.7271146+00:00"
+    },
+    {
+      "suite": "test:consent-proposal",
+      "baselinePassed": null,
+      "passed": 3,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:41:06.7363773+00:00",
+      "finishedUtc": "2026-10-06T17:41:11.5059653+00:00"
+    },
+    {
+      "suite": "build",
+      "baselinePassed": null,
+      "passed": null,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:41:11.5147938+00:00",
+      "finishedUtc": "2026-10-06T17:41:27.2825384+00:00"
+    },
+    {
+      "suite": "test:e2e",
+      "baselinePassed": 7,
+      "passed": 7,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:41:27.2917146+00:00",
+      "finishedUtc": "2026-10-06T17:42:26.1179212+00:00"
+    },
+    {
+      "suite": "test:e2e:auth",
+      "baselinePassed": 19,
+      "passed": 32,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:42:26.1293053+00:00",
+      "finishedUtc": "2026-10-06T17:43:21.2160420+00:00"
+    },
+    {
+      "suite": "test:e2e:sync",
+      "baselinePassed": 15,
+      "passed": 15,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:43:21.2283020+00:00",
+      "finishedUtc": "2026-10-06T17:45:16.8604614+00:00"
+    },
+    {
+      "suite": "test:e2e:hardening",
+      "baselinePassed": 6,
+      "passed": 12,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:45:16.8708582+00:00",
+      "finishedUtc": "2026-10-06T17:46:03.6836576+00:00"
+    },
+    {
+      "suite": "test:e2e:recovery",
+      "baselinePassed": 3,
+      "passed": 3,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:46:03.6933371+00:00",
+      "finishedUtc": "2026-10-06T17:46:26.0201909+00:00"
+    },
+    {
+      "suite": "test:e2e:stress",
+      "baselinePassed": 17,
+      "passed": 17,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:46:26.0312143+00:00",
+      "finishedUtc": "2026-10-06T17:48:21.3363752+00:00"
+    },
+    {
+      "suite": "test:e2e:performance",
+      "baselinePassed": 6,
+      "passed": 6,
+      "exitCode": 0,
+      "skipped": 0,
+      "startedUtc": "2026-10-06T17:48:21.3470976+00:00",
+      "finishedUtc": "2026-10-06T17:50:20.9376751+00:00"
+    },
+    {
+      "suite": "test:e2e:pwa",
+      "baselinePassed": 5,
+      "passed": 6,
+      "exitCode": 0,
+      "skipped": 1,
+      "startedUtc": "2026-10-06T17:50:20.9507195+00:00",
+      "finishedUtc": "2026-10-06T17:50:51.9947074+00:00"
+    }
+  ],
+  "uniqueBrowserPassed": 98,
+  "standardBrowserPassed": 92,
+  "performance": [
+    {
+      "sessions": 100,
+      "before": {
+        "workspace": {
+          "measuredAt": "2026-10-06T10:46:54.379Z",
+          "browser": "chromium",
+          "version": "154.0.4258.53",
+          "mode": "Production minified build on loopback; synthetic account IndexedDB; intercepted Auth and 503 cloud; service workers blocked; no hosted latency or packaged-native claim.",
+          "startupReadyMs": 443.89999997615814,
+          "historyNavigationMs": 352,
+          "insightsNavigationMs": 125,
+          "warmHistoryNavigationMs": 38,
+          "warmInsightsNavigationMs": 20,
+          "idleLongTasksMs": [],
+          "authenticationHttpRequests": 1,
+          "syncHttpRequests": 3
+        },
+        "sync": {
+          "measuredAt": "2026-10-06T10:45:24.195Z",
+          "browser": "154.0.4258.53",
+          "mode": "Production minified Edge SDK/worker/Dexie against unchanged SQL in PGlite through intercepted RPC transport; mock Auth; one SQL connection; no hosted/PostgREST/native latency claim.",
+          "initialPull": {
+            "wallMs": 876,
+            "pages": 3,
+            "changes": 121,
+            "unfinishedResponses": 0
+          },
+          "incrementalPush100": {
+            "wallMs": 2944,
+            "applyCalls": 100,
+            "pages": 2,
+            "changes": 100,
+            "unfinishedResponses": 0
+          },
+          "backupRoundTrip": {
+            "exportedSessions": 200,
+            "exportedAllocations": 240,
+            "exportedUtf8Bytes": 115459,
+            "exportWallMs": 527,
+            "sameBackupImportIncludingRequiredBackupWallMs": 425,
+            "duplicateApplyOperations": 0
+          }
+        },
+        "rawMeasurementSha256": {
+          "workspace": "452f6e5b796857aed1eebd742c71455ca12c24f6b7f0b3160ef369bd51cae76f",
+          "sync": "4ff093e4ec28e6d4fc6f56239fad3222fc92859298add9e6c8dae7dd0385d046"
+        }
+      },
+      "after": {
+        "workspace": {
+          "measuredAt": "2026-10-06T17:50:05.678Z",
+          "browser": "chromium",
+          "version": "154.0.4258.53",
+          "mode": "Production minified build on loopback; synthetic account IndexedDB; intercepted Auth and 503 cloud; service workers blocked; no hosted latency or packaged-native claim.",
+          "startupReadyMs": 435,
+          "historyNavigationMs": 370,
+          "insightsNavigationMs": 114,
+          "warmHistoryNavigationMs": 37,
+          "warmInsightsNavigationMs": 33,
+          "idleLongTasksMs": [],
+          "authenticationHttpRequests": 1,
+          "syncHttpRequests": 3
+        },
+        "sync": {
+          "measuredAt": "2026-10-06T17:48:35.991Z",
+          "browser": "154.0.4258.53",
+          "mode": "Production minified Edge SDK/worker/Dexie against unchanged SQL in PGlite through intercepted RPC transport; mock Auth; one SQL connection; no hosted/PostgREST/native latency claim.",
+          "initialPull": {
+            "wallMs": 882,
+            "pages": 3,
+            "changes": 121,
+            "unfinishedResponses": 0
+          },
+          "incrementalPush100": {
+            "wallMs": 2965,
+            "applyCalls": 100,
+            "pages": 2,
+            "changes": 100,
+            "unfinishedResponses": 0
+          },
+          "backupRoundTrip": {
+            "exportedSessions": 200,
+            "exportedAllocations": 240,
+            "exportedUtf8Bytes": 115459,
+            "exportWallMs": 475,
+            "sameBackupImportIncludingRequiredBackupWallMs": 404,
+            "duplicateApplyOperations": 0
+          }
+        },
+        "rawMeasurementSha256": {
+          "workspace": "293a57da39fca238d3db46177ef3fcf3a3b1b7ddfebeb2be5fa3ee46d65a2801",
+          "sync": "9e2c9101f211fc8e4ac66c490e1d55f5575531a421a40d3e942d2d132a34fda6"
+        }
+      }
+    },
+    {
+      "sessions": 1000,
+      "before": {
+        "workspace": {
+          "measuredAt": "2026-10-06T10:47:00.795Z",
+          "browser": "chromium",
+          "version": "154.0.4258.53",
+          "mode": "Production minified build on loopback; synthetic account IndexedDB; intercepted Auth and 503 cloud; service workers blocked; no hosted latency or packaged-native claim.",
+          "startupReadyMs": 452.5,
+          "historyNavigationMs": 367,
+          "insightsNavigationMs": 79,
+          "warmHistoryNavigationMs": 39,
+          "warmInsightsNavigationMs": 32,
+          "idleLongTasksMs": [],
+          "authenticationHttpRequests": 1,
+          "syncHttpRequests": 3
+        },
+        "sync": {
+          "measuredAt": "2026-10-06T10:45:35.614Z",
+          "browser": "154.0.4258.53",
+          "mode": "Production minified Edge SDK/worker/Dexie against unchanged SQL in PGlite through intercepted RPC transport; mock Auth; one SQL connection; no hosted/PostgREST/native latency claim.",
+          "initialPull": {
+            "wallMs": 2595,
+            "pages": 12,
+            "changes": 1021,
+            "unfinishedResponses": 0
+          },
+          "incrementalPush100": {
+            "wallMs": 2942,
+            "applyCalls": 100,
+            "pages": 2,
+            "changes": 100,
+            "unfinishedResponses": 0
+          },
+          "backupRoundTrip": {
+            "exportedSessions": 1100,
+            "exportedAllocations": 1320,
+            "exportedUtf8Bytes": 603799,
+            "exportWallMs": 424,
+            "sameBackupImportIncludingRequiredBackupWallMs": 1109,
+            "duplicateApplyOperations": 0
+          }
+        },
+        "rawMeasurementSha256": {
+          "workspace": "e6cc89d388b95e328c099d992de6e212c1aaff720e3125b83668f7f2c74f355b",
+          "sync": "e6c10e3a2a9f435ca33acb309c2d2281c4a8f9c20b85345e7a842919a7796e79"
+        }
+      },
+      "after": {
+        "workspace": {
+          "measuredAt": "2026-10-06T17:50:11.829Z",
+          "browser": "chromium",
+          "version": "154.0.4258.53",
+          "mode": "Production minified build on loopback; synthetic account IndexedDB; intercepted Auth and 503 cloud; service workers blocked; no hosted latency or packaged-native claim.",
+          "startupReadyMs": 453.5,
+          "historyNavigationMs": 375,
+          "insightsNavigationMs": 115,
+          "warmHistoryNavigationMs": 34,
+          "warmInsightsNavigationMs": 23,
+          "idleLongTasksMs": [],
+          "authenticationHttpRequests": 1,
+          "syncHttpRequests": 4
+        },
+        "sync": {
+          "measuredAt": "2026-10-06T17:48:47.788Z",
+          "browser": "154.0.4258.53",
+          "mode": "Production minified Edge SDK/worker/Dexie against unchanged SQL in PGlite through intercepted RPC transport; mock Auth; one SQL connection; no hosted/PostgREST/native latency claim.",
+          "initialPull": {
+            "wallMs": 3003,
+            "pages": 12,
+            "changes": 1021,
+            "unfinishedResponses": 0
+          },
+          "incrementalPush100": {
+            "wallMs": 2954,
+            "applyCalls": 100,
+            "pages": 2,
+            "changes": 100,
+            "unfinishedResponses": 0
+          },
+          "backupRoundTrip": {
+            "exportedSessions": 1100,
+            "exportedAllocations": 1320,
+            "exportedUtf8Bytes": 603799,
+            "exportWallMs": 430,
+            "sameBackupImportIncludingRequiredBackupWallMs": 1102,
+            "duplicateApplyOperations": 0
+          }
+        },
+        "rawMeasurementSha256": {
+          "workspace": "0aba5b096c34202d5a143f9193e35b0233c8c935e35c15742b5f231433502659",
+          "sync": "cb34da7a30362ccd1b823097a809826581e01edc48f694c114cd0aad2f0d555c"
+        }
+      }
+    },
+    {
+      "sessions": 10000,
+      "before": {
+        "workspace": {
+          "measuredAt": "2026-10-06T10:47:09.715Z",
+          "browser": "chromium",
+          "version": "154.0.4258.53",
+          "mode": "Production minified build on loopback; synthetic account IndexedDB; intercepted Auth and 503 cloud; service workers blocked; no hosted latency or packaged-native claim.",
+          "startupReadyMs": 607.5999999046326,
+          "historyNavigationMs": 360,
+          "insightsNavigationMs": 249,
+          "warmHistoryNavigationMs": 35,
+          "warmInsightsNavigationMs": 48,
+          "idleLongTasksMs": [],
+          "authenticationHttpRequests": 1,
+          "syncHttpRequests": 5
+        },
+        "sync": {
+          "measuredAt": "2026-10-06T10:46:48.075Z",
+          "browser": "154.0.4258.53",
+          "mode": "Production minified Edge SDK/worker/Dexie against unchanged SQL in PGlite through intercepted RPC transport; mock Auth; one SQL connection; no hosted/PostgREST/native latency claim.",
+          "initialPull": {
+            "wallMs": 29717,
+            "pages": 102,
+            "changes": 10021,
+            "unfinishedResponses": 0
+          },
+          "incrementalPush100": {
+            "wallMs": 2956,
+            "applyCalls": 100,
+            "pages": 2,
+            "changes": 100,
+            "unfinishedResponses": 0
+          },
+          "backupRoundTrip": {
+            "exportedSessions": 10100,
+            "exportedAllocations": 12120,
+            "exportedUtf8Bytes": 5487199,
+            "exportWallMs": 539,
+            "sameBackupImportIncludingRequiredBackupWallMs": 7120,
+            "duplicateApplyOperations": 0
+          }
+        },
+        "rawMeasurementSha256": {
+          "workspace": "78356ff30d8b1a2373b64af92203de965e7b13b963c35ed8d364ade58cd57822",
+          "sync": "840aac6665bbc835b8ca83c5db8eafb4722a717cae44ef48e2624270a6a34b31"
+        }
+      },
+      "after": {
+        "workspace": {
+          "measuredAt": "2026-10-06T17:50:20.406Z",
+          "browser": "chromium",
+          "version": "154.0.4258.53",
+          "mode": "Production minified build on loopback; synthetic account IndexedDB; intercepted Auth and 503 cloud; service workers blocked; no hosted latency or packaged-native claim.",
+          "startupReadyMs": 594,
+          "historyNavigationMs": 360,
+          "insightsNavigationMs": 124,
+          "warmHistoryNavigationMs": 41,
+          "warmInsightsNavigationMs": 39,
+          "idleLongTasksMs": [],
+          "authenticationHttpRequests": 1,
+          "syncHttpRequests": 5
+        },
+        "sync": {
+          "measuredAt": "2026-10-06T17:49:59.361Z",
+          "browser": "154.0.4258.53",
+          "mode": "Production minified Edge SDK/worker/Dexie against unchanged SQL in PGlite through intercepted RPC transport; mock Auth; one SQL connection; no hosted/PostgREST/native latency claim.",
+          "initialPull": {
+            "wallMs": 29845,
+            "pages": 102,
+            "changes": 10021,
+            "unfinishedResponses": 0
+          },
+          "incrementalPush100": {
+            "wallMs": 2949,
+            "applyCalls": 100,
+            "pages": 2,
+            "changes": 100,
+            "unfinishedResponses": 0
+          },
+          "backupRoundTrip": {
+            "exportedSessions": 10100,
+            "exportedAllocations": 12120,
+            "exportedUtf8Bytes": 5487199,
+            "exportWallMs": 492,
+            "sameBackupImportIncludingRequiredBackupWallMs": 7321,
+            "duplicateApplyOperations": 0
+          }
+        },
+        "rawMeasurementSha256": {
+          "workspace": "06c99e921b44e9384cf4877e1b338a40e0598dd05f8faa4add23aa7aa17cf5fd",
+          "sync": "ce11b6f5d5756a88707562d9fec0d7b3188b42089d971bf94606714e3c63320f"
+        }
+      }
+    }
+  ],
+  "hostedReadonly": {
+    "measuredAt": "2026-10-06T10:57:41.625Z",
+    "scope": "Anonymous read-only requests; no records requested, no writes or configuration changes",
+    "results": [
+      {
+        "check": "Public Auth settings",
+        "status": 200,
+        "mailerAutoconfirm": false,
+        "emailSignupEnabled": true,
+        "disableSignup": false
+      },
+      {
+        "check": "Anonymous stride_subjects zero-row selection",
+        "status": 401,
+        "errorCode": "42501"
+      },
+      {
+        "check": "Anonymous stride_sessions zero-row selection",
+        "status": 401,
+        "errorCode": "42501"
+      },
+      {
+        "check": "Anonymous stride_allocations zero-row selection",
+        "status": 401,
+        "errorCode": "42501"
+      },
+      {
+        "check": "Anonymous stride_preferences zero-row selection",
+        "status": 401,
+        "errorCode": "42501"
+      },
+      {
+        "check": "Private schema Data API exposure",
+        "status": 406,
+        "errorCode": "PGRST106"
+      }
+    ]
+  },
+  "npmAudit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "frozenRuntimeCommit": "d3f472a9a5efe9cef58e5cae21318154eb996e49",
+  "verifiedSourceAndIntegrationTestCommit": "7d7f5ace280488877e7ae111428e97f6bac89a1a",
+  "completedCI": {
+    "frontend": {
+      "runId": 37508043377,
+      "conclusion": "success",
+      "standardBrowserPassed": 92,
+      "pwaSkipped": 1
+    },
+    "integration": {
+      "runId": 37508043287,
+      "conclusion": "success",
+      "sqlPassed": 16,
+      "httpPassedIncludingParent": 11,
+      "httpNestedPassed": 10,
+      "sdkPassed": 6,
+      "cleanupPassed": true
+    },
+    "windows": {
+      "runId": 37508043316,
+      "ordinary": "success",
+      "validation": "success",
+      "publish": "skipped",
+      "auditedPackagesReachableOnWindows": false
+    }
+  },
+  "windowsPackageInspection": {
+    "recordedAt": "2026-10-06T18:06:14.7736763+00:00",
+    "sourceCommit": "d3f472a9a5efe9cef58e5cae21318154eb996e49",
+    "runId": 37507409433,
+    "artifactId": 11433240213,
+    "githubArchiveDigestVerified": true,
+    "x64VersionZipContentsAndChecksumsVerified": true,
+    "files": [
+      {
+        "name": "SHA256SUMS.txt",
+        "bytes": 199,
+        "sha256": "6b0c5f41bd7e670d46416851def22f0a3745698dc87899b5bc318a75beb89a1b"
+      },
+      {
+        "name": "Stride_1.0.0_Windows-x64-portable.zip",
+        "bytes": 2619323,
+        "sha256": "bcf4d4bf9b4421379fe40e7f78b3bc5bedb925ae85347ee145e9ad2d25625c1f"
+      },
+      {
+        "name": "Stride_1.0.0_x64-setup.exe",
+        "bytes": 2040390,
+        "sha256": "4b41be921b7cf0a35a518b4d82456b81438722dcd043b40d4668797a9dd3c144"
+      }
+    ],
+    "portableRawStringPatternCounts": {
+      "supabaseSecret": 0,
+      "githubToken": 0,
+      "jwt": 0,
+      "privateKey": 0,
+      "databaseCredentialUrl": 0,
+      "appTestHooks": 0
+    },
+    "signingStatus": "NotSigned",
+    "executed": false,
+    "scope": "Downloaded ordinary CI package; byte integrity, PE/version/ZIP metadata and raw strings only. Embedded frontend guard also passed in CI; compressed binary contents are not comprehensively decoded. No installation or personal profile access."
+  },
+  "originReadonly": {
+    "measuredAt": "2026-10-06T17:52:33.011Z",
+    "scope": "Read-only public web headers and zero-row anonymous request with an untrusted Origin; no writes or settings changes",
+    "web": {
+      "status": 200,
+      "contentSecurityPolicy": null,
+      "frameOptions": null,
+      "contentTypeOptions": "nosniff",
+      "referrerPolicy": "strict-origin-when-cross-origin"
+    },
+    "supabase": {
+      "status": 401,
+      "errorCode": "42501",
+      "allowOrigin": "https://untrusted.example"
+    }
+  }
+}

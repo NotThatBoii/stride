@@ -1,13 +1,10 @@
 import { z } from "zod";
 import type { Data } from "../models";
 import { activeSegments } from "./timer";
+import { isCalendarDate, isStudyTimestamp } from "./calendar-validation";
+import { splitSegments } from "./analytics";
 const id = z.string().min(1).max(200);
-const timestamp = z
-  .string()
-  .refine(
-    (s) => /^\d{4}-\d{2}-\d{2}T/.test(s) && Number.isFinite(Date.parse(s)),
-    "Invalid timestamp",
-  );
+const timestamp = z.string().refine(isStudyTimestamp, "Invalid timestamp");
 const flag = z.union([z.literal(0), z.literal(1)]);
 const mode = z.enum(["stopwatch", "countdown"]);
 const subject = z.object({
@@ -47,10 +44,11 @@ const settings = z.object({
   notifications: z.boolean(),
   onboarded: z.boolean(),
 });
+const timerTimestamp = z.number().finite().nonnegative();
 const segment = z
   .object({
-    start: z.number().finite().nonnegative(),
-    end: z.number().finite().nonnegative(),
+    start: timerTimestamp,
+    end: timerTimestamp,
   })
   .refine((s) => s.end >= s.start);
 const running = z.object({
@@ -61,16 +59,13 @@ const running = z.object({
   mode,
   target: z.number().finite().min(60).max(86400),
   segments: z.array(segment).max(100000),
-  runningSince: z.number().finite().nonnegative().nullable(),
+  runningSince: timerTimestamp.nullable(),
   notified: z.boolean(),
 });
 const day = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine((s) => {
-    const d = new Date(s + "T12:00:00Z");
-    return Number.isFinite(d.getTime()) && d.toISOString().slice(0, 10) === s;
-  });
+  .refine(isCalendarDate);
 const schema = z.object({
   subjects: z.array(subject).max(10000),
   sessions: z.array(session).max(100000),
@@ -163,11 +158,25 @@ export function parseBackup(text: string): Data {
     const at = Date.parse(envelope.data.exportedAt);
     if (at < Date.parse(data.running.startedAt))
       throw new Error("Export predates its active timer.");
+    const timestamps = data.running.segments.flatMap(({ start, end }) => [
+      start,
+      end,
+    ]);
+    if (data.running.runningSince !== null)
+      timestamps.push(data.running.runningSince);
+    if (timestamps.some((value) => !Number.isFinite(new Date(value).getTime())))
+      throw new Error(
+        "Invalid timer timestamp. Your backup file is unchanged.",
+      );
     data.running = {
       ...data.running,
       segments: activeSegments(data.running, at),
       runningSince: null,
     };
+    // Validate the effective paused timer, including countdown clipping, before
+    // admitting a backup. The same bounded partition is used when saving a
+    // session; a tiny malicious interval must not generate millions of days.
+    splitSegments(data.running.id, data.running.segments);
   }
   return validateData(data);
 }

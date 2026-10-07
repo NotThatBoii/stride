@@ -5,6 +5,11 @@ import {
   type User,
 } from "@supabase/supabase-js";
 import { selectWorkspace } from "../lib/local-database";
+import {
+  consentRequiredMessage,
+  hasCurrentSignupConsent,
+  type SignupConsent,
+} from "../lib/legal";
 
 export type AuthStatus = "disabled" | "restoring" | "signed_out" | "signed_in";
 export type AuthAction = "sign_in" | "sign_up" | "sign_out";
@@ -14,6 +19,7 @@ export interface AuthSnapshot {
   user: User | null;
   error: string | null;
   pendingAction: AuthAction | null;
+  callbackInitializationSettled: boolean;
 }
 
 // Keeping this small interface makes the session and workspace transition
@@ -66,12 +72,43 @@ function messageFrom(error: unknown): string {
   if (
     isAuthRetryableFetchError(error) ||
     (error instanceof Error &&
-      /^(failed to fetch|fetch failed|networkerror when attempting to fetch resource\.?|load failed)$/i.test(
+      /^(failed to fetch|fetch failed|networkerror when attempting to fetch resource\.?|load failed|network unavailable)$/i.test(
         error.message,
       ))
   )
     return "Unable to connect to your account. Check your connection and try again.";
-  return error instanceof Error && error.message
+  const code =
+    error && typeof error === "object" && "code" in error ? error.code : null;
+  const publicMessages: Record<string, string> = {
+    invalid_credentials: "Invalid login credentials",
+    email_not_confirmed: "Email not confirmed",
+    weak_password: "Choose a stronger password and try again.",
+    email_address_invalid: "Enter a valid email address and try again.",
+    user_already_exists:
+      "Unable to create this account. Try signing in instead.",
+    signup_disabled:
+      "Account creation is currently unavailable. Try again later.",
+    user_banned: "This account cannot sign in. Contact the app maintainer.",
+    over_request_rate_limit:
+      "Too many account requests. Wait before trying again.",
+    over_email_send_rate_limit:
+      "Too many account requests. Wait before trying again.",
+  };
+  if (typeof code === "string" && Object.hasOwn(publicMessages, code))
+    return publicMessages[code];
+  // Only fixed application guidance and exact legacy SDK categories are
+  // allowed through. Unknown server/SDK messages may contain diagnostics or
+  // credentials and must never be copied to the screen or thrown to callers.
+  const safeMessages = new Set([
+    "Invalid login credentials",
+    "Email not confirmed",
+    "Sign-in was interrupted by sign-out.",
+    "Sign-in did not establish a session.",
+    "Unable to save this account session on this device.",
+    "Account request was interrupted.",
+    "Account creation was interrupted by sign-out.",
+  ]);
+  return error instanceof Error && safeMessages.has(error.message)
     ? error.message
     : "Authentication failed. Please try again.";
 }
@@ -88,6 +125,7 @@ export class AuthSessionManager {
   private operationSerial = 0;
   private interruptedBySignOut = false;
   private signedOutBarrier = false;
+  private callbackInitializationSettled = false;
 
   readonly subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
@@ -110,6 +148,7 @@ export class AuthSessionManager {
       user: null,
       error: null,
       pendingAction: null,
+      callbackInitializationSettled: false,
     };
   }
 
@@ -118,6 +157,7 @@ export class AuthSessionManager {
     this.active = true;
     const lifecycle = ++this.lifecycle;
     this.initialSettled = false;
+    this.callbackInitializationSettled = !this.client;
     this.signedOutBarrier = this.hasSignedOutMarker();
     this.publish({
       status: this.client
@@ -172,10 +212,9 @@ export class AuthSessionManager {
         },
       ).data.subscription;
 
-      // A previous explicit sign-out remains authoritative across reloads,
-      // even when the SDK still holds an old in-memory session.
-      if (this.signedOutBarrier) return;
-
+      // Await the official SDK initialization even behind a signed-out
+      // barrier, so URL cleanup cannot race its email callback processing.
+      // The barrier's settled state still prevents reopening the workspace.
       void this.client.auth
         .getSession()
         .then(({ data, error }) => {
@@ -202,6 +241,11 @@ export class AuthSessionManager {
             user: null,
             error: unavailableMessage,
           });
+        })
+        .finally(() => {
+          if (!this.isCurrent(lifecycle)) return;
+          this.callbackInitializationSettled = true;
+          this.publish(this.snapshot);
         });
     } catch {
       if (!this.isCurrent(lifecycle)) return;
@@ -224,6 +268,7 @@ export class AuthSessionManager {
     this.subscription = null;
     this.operation = null;
     this.interruptedBySignOut = false;
+    this.callbackInitializationSettled = false;
     ++this.operationSerial;
     this.publish({ status: "restoring", user: null, error: null });
   }
@@ -266,10 +311,13 @@ export class AuthSessionManager {
   readonly signUp = async (
     email: string,
     password: string,
+    consent: SignupConsent,
   ): Promise<{ needsEmailConfirmation: boolean }> => {
     const client = this.requireClient();
     if (this.snapshot.status === "signed_in")
       throw new Error("Sign out before creating another account.");
+    if (!hasCurrentSignupConsent(consent))
+      throw new Error(consentRequiredMessage);
     const operation = this.beginOperation("sign_up");
     const lifecycle = this.lifecycle;
     this.publish({ status: "signed_out", user: null, error: null });
@@ -442,12 +490,18 @@ export class AuthSessionManager {
     });
   }
 
-  private publish(next: Omit<AuthSnapshot, "pendingAction">): void {
+  private publish(
+    next: Omit<AuthSnapshot, "pendingAction" | "callbackInitializationSettled">,
+  ): void {
     try {
       this.switchWorkspace(
         next.status === "signed_in" ? (next.user?.id ?? null) : null,
       );
-      this.snapshot = { ...next, pendingAction: this.operation };
+      this.snapshot = {
+        ...next,
+        pendingAction: this.operation,
+        callbackInitializationSettled: this.callbackInitializationSettled,
+      };
     } catch {
       this.switchWorkspace(null);
       this.snapshot = {
@@ -455,6 +509,7 @@ export class AuthSessionManager {
         user: null,
         error: "Unable to open this account's local workspace.",
         pendingAction: this.operation,
+        callbackInitializationSettled: this.callbackInitializationSettled,
       };
     }
     this.listeners.forEach((listener) => listener());

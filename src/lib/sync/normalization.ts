@@ -2,6 +2,8 @@ import { z } from "zod";
 import { defaults, type Subject } from "../../models";
 import type { PendingOperation, SyncEntity } from "../local-database";
 import { validateData } from "../validation";
+import { isStudyTimestamp } from "../calendar-validation";
+import { maximumSessionAllocations } from "../study-limits";
 import {
   SyncError,
   type CloudPayload,
@@ -41,11 +43,7 @@ export function compareRevision(a: string, b: string): number {
 }
 
 export function normalizeTimestamp(value: unknown): string {
-  if (
-    typeof value !== "string" ||
-    !/^\d{4}-\d{2}-\d{2}T/.test(value) ||
-    !Number.isFinite(Date.parse(value))
-  )
+  if (!isStudyTimestamp(value))
     throw new SyncError(
       "Invalid study timestamp; its local copy is preserved.",
       "permanent",
@@ -111,7 +109,11 @@ export function normalizePayload(
       session: { subject_id: string; started_at: string; ended_at: string };
       slices: unknown[];
     };
-    if (!raw?.session || !Array.isArray(raw.slices) || raw.slices.length > 1000)
+    if (
+      !raw?.session ||
+      !Array.isArray(raw.slices) ||
+      raw.slices.length > maximumSessionAllocations
+    )
       throw new Error("Invalid session allocations");
     const session = {
       ...raw.session,

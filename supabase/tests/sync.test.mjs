@@ -595,3 +595,335 @@ test("cloud preferences exclude device-only theme, notifications, and onboarding
     assert.ok(!("onboarded" in row));
   });
 });
+
+test("every exposed study table denies bypass writes and foreign-owner reads, and private helpers stay denied", async () => {
+  await withDatabase(async (db) => {
+    for (const owner of [alice, bob]) {
+      await apply(db, owner, {
+        entity: "subject",
+        recordId: "shared-subject",
+        payload: subject(owner === alice ? "Alice" : "Bob", "shared-subject"),
+      });
+      await apply(db, owner, {
+        entity: "session",
+        recordId: "shared-session",
+        payload: sessionPayload("shared-session", "shared-subject"),
+      });
+      await apply(db, owner, {
+        entity: "settings",
+        recordId: "settings",
+        payload: { minimum: 20, goal: 60, presets: "25,45,60", weekStart: 1 },
+      });
+    }
+    const before = await pull(db, alice);
+    // Identifiers come only from this fixed test inventory, never user data.
+    for (const table of [
+      "stride_subjects",
+      "stride_sessions",
+      "stride_allocations",
+      "stride_preferences",
+    ]) {
+      const ownRows = await asRole(db, "authenticated", alice, (tx) =>
+        tx.query(`select owner_id from public.${table}`),
+      );
+      assert.ok(ownRows.rows.length > 0);
+      assert.ok(
+        ownRows.rows.every((row) => row.owner_id === alice),
+        table,
+      );
+      const foreign = await asRole(db, "authenticated", alice, (tx) =>
+        tx.query(`select owner_id from public.${table} where owner_id = $1`, [
+          bob,
+        ]),
+      );
+      assert.equal(foreign.rows.length, 0, table);
+      for (const role of ["anon", "authenticated"]) {
+        const statements = [
+          `insert into public.${table} default values`,
+          `update public.${table} set owner_id = $1 where owner_id = $1`,
+          `delete from public.${table} where owner_id = $1`,
+          ...(role === "anon"
+            ? [`select * from public.${table} where owner_id = $1`]
+            : []),
+        ];
+        for (const statement of statements) {
+          await assert.rejects(
+            () =>
+              asRole(db, role, role === "anon" ? null : alice, (tx) =>
+                tx.query(statement, statement.includes("$1") ? [alice] : []),
+              ),
+            (error) => error.code === "42501",
+            `${role}: ${table} must deny direct access`,
+          );
+        }
+      }
+    }
+    for (const table of [
+      "stride_record_versions",
+      "stride_sync_clocks",
+      "stride_sync_changes",
+      "stride_sync_operations",
+    ]) {
+      await assert.rejects(
+        () =>
+          asRole(db, "authenticated", alice, (tx) =>
+            tx.query(`select * from stride_private.${table}`),
+          ),
+        (error) => error.code === "42501",
+      );
+    }
+    for (const [signature, invocation] of [
+      [
+        "stride_private.assert_allocation_total(uuid,text)",
+        "stride_private.assert_allocation_total($1::uuid, 'shared-session')",
+      ],
+      [
+        "stride_private.check_allocation_total()",
+        "stride_private.check_allocation_total()",
+      ],
+      [
+        "stride_private.append_change(uuid,text,text,text,jsonb,bigint,uuid)",
+        "stride_private.append_change($1::uuid, 'subject', 'shared-subject', 'delete', null::jsonb, 1::bigint, $2::uuid)",
+      ],
+    ]) {
+      assert.equal(
+        (
+          await db.query(
+            "select has_function_privilege('authenticated', $1, 'EXECUTE') as allowed",
+            [signature],
+          )
+        ).rows[0].allowed,
+        false,
+        signature,
+      );
+      await assert.rejects(
+        () =>
+          asRole(db, "authenticated", alice, (tx) =>
+            tx.query(
+              `select ${invocation}`,
+              invocation.includes("$2")
+                ? [alice, crypto.randomUUID()]
+                : invocation.includes("$1")
+                  ? [alice]
+                  : [],
+            ),
+          ),
+        (error) => error.code === "42501",
+      );
+    }
+    // These two private cores intentionally support the public invoker wrappers.
+    // Their SQL grant must not be confused with exposing stride_private over HTTP.
+    assert.equal(
+      (
+        await db.query(
+          "select has_function_privilege('authenticated', 'stride_private.get_sync_changes_core(text,integer)', 'EXECUTE') as allowed",
+        )
+      ).rows[0].allowed,
+      true,
+    );
+    await assert.rejects(
+      () =>
+        asRole(db, "authenticated", null, (tx) =>
+          tx.query("select stride_private.get_sync_changes_core('0', 100)"),
+        ),
+      (error) => error.code === "42501",
+    );
+    assert.deepEqual(await pull(db, alice), before);
+  });
+});
+
+test("malformed owner, UUID, timestamps, revisions and allocations leave cloud records, clocks and receipts unchanged", async () => {
+  await withDatabase(async (db) => {
+    await apply(db, alice, {
+      entity: "subject",
+      recordId: "math",
+      payload: subject(),
+    });
+    const before = await pull(db, alice);
+    const receiptCount = async () =>
+      (
+        await db.query(
+          "select count(*)::integer as n from stride_private.stride_sync_operations where owner_id = $1",
+          [alice],
+        )
+      ).rows[0].n;
+    const beforeReceipts = await receiptCount();
+    const invalidSubject = {
+      entity: "subject",
+      recordId: "invalid",
+      payload: subject("Invalid", "invalid"),
+    };
+    const tooMany = sessionPayload("invalid-session");
+    tooMany.slices = Array.from({ length: 1001 }, () => ({
+      session_id: "invalid-session",
+      day: "2026-09-21",
+      seconds: 0,
+    }));
+    const invalidDay = sessionPayload("invalid-session");
+    invalidDay.slices[0].day = "2026-02-30";
+    for (const input of [
+      {
+        ...invalidSubject,
+        payload: { ...invalidSubject.payload, owner_id: "not-a-uuid" },
+      },
+      { ...invalidSubject, operationId: "not-a-uuid" },
+      {
+        ...invalidSubject,
+        payload: {
+          ...invalidSubject.payload,
+          created_at: "2026-02-30T00:00:00Z",
+        },
+      },
+      { ...invalidSubject, revision: "9999999999999999999" },
+      { entity: "session", recordId: "invalid-session", payload: invalidDay },
+      { entity: "session", recordId: "invalid-session", payload: tooMany },
+    ]) {
+      await assert.rejects(() => apply(db, alice, input));
+      assert.deepEqual(await pull(db, alice), before);
+      assert.equal(await receiptCount(), beforeReceipts);
+    }
+    await assert.rejects(() => pull(db, alice, "9999999999999999999"));
+    assert.deepEqual(await pull(db, alice), before);
+    assert.equal(await receiptCount(), beforeReceipts);
+    assert.equal(
+      (
+        await db.query(
+          "select count(*)::integer as n from public.stride_subjects",
+        )
+      ).rows[0].n,
+      1,
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select count(*)::integer as n from public.stride_sessions",
+        )
+      ).rows[0].n,
+      0,
+    );
+  });
+});
+
+test("SQL-shaped text remains data and identical operation UUIDs have independent owner-scoped receipts", async () => {
+  await withDatabase(async (db) => {
+    const operationId = crypto.randomUUID();
+    const id = "sql-shaped'); DROP TABLE public.stride_subjects; --";
+    const aliceInput = {
+      operationId,
+      entity: "subject",
+      recordId: id,
+      payload: {
+        ...subject("'; DELETE FROM auth.users; --", id),
+        description:
+          "SELECT secret FROM stride_private.stride_sync_operations;",
+      },
+    };
+    const bobInput = {
+      ...aliceInput,
+      payload: subject("Bob sentinel unchanged", id),
+    };
+    const a = await apply(db, alice, aliceInput);
+    const b = await apply(db, bob, bobInput);
+    assert.deepEqual(await apply(db, alice, aliceInput), a);
+    assert.deepEqual(await apply(db, bob, bobInput), b);
+    for (const [owner, input] of [
+      [alice, aliceInput],
+      [bob, bobInput],
+    ]) {
+      const row = (
+        await asRole(db, "authenticated", owner, (tx) =>
+          tx.query(
+            "select id, name, description from public.stride_subjects where id = $1",
+            [id],
+          ),
+        )
+      ).rows[0];
+      assert.deepEqual(row, {
+        id,
+        name: input.payload.name,
+        description: input.payload.description,
+      });
+      assert.equal((await pull(db, owner)).changes.length, 1);
+      assert.equal(
+        (await pull(db, owner)).changes[0].payload.name,
+        input.payload.name,
+      );
+    }
+    const sessionOperationId = crypto.randomUUID();
+    const sessionId = "session'); SELECT pg_sleep(99); --";
+    for (const owner of [alice, bob]) {
+      const payload = sessionPayload(sessionId, id);
+      payload.session.session_title =
+        owner === alice
+          ? "'; DROP TABLE public.stride_sessions; --"
+          : "Bob title sentinel";
+      payload.session.notes =
+        owner === alice
+          ? "UPDATE auth.users SET id = NULL; -- quotes ' remain text"
+          : "Bob notes sentinel";
+      await apply(db, owner, {
+        operationId: sessionOperationId,
+        entity: "session",
+        recordId: sessionId,
+        payload,
+      });
+      const row = (
+        await asRole(db, "authenticated", owner, (tx) =>
+          tx.query(
+            "select session_title, notes from public.stride_sessions where id = $1",
+            [sessionId],
+          ),
+        )
+      ).rows[0];
+      assert.deepEqual(row, {
+        session_title: payload.session.session_title,
+        notes: payload.session.notes,
+      });
+    }
+    await assert.rejects(
+      () =>
+        apply(db, alice, {
+          ...aliceInput,
+          payload: {
+            ...aliceInput.payload,
+            name: "Changed request under frozen UUID",
+          },
+        }),
+      (error) => error.code === "23505",
+    );
+    const receipts = (
+      await db.query(
+        "select owner_id, operation_id from stride_private.stride_sync_operations where operation_id = $1 order by owner_id",
+        [operationId],
+      )
+    ).rows;
+    assert.deepEqual(
+      receipts.map((receipt) => receipt.owner_id),
+      [alice, bob],
+    );
+    assert.ok(
+      receipts.every((receipt) => receipt.operation_id === operationId),
+    );
+    assert.equal(
+      (await db.query("select count(*)::integer as n from auth.users")).rows[0]
+        .n,
+      2,
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select count(*)::integer as n from public.stride_subjects",
+        )
+      ).rows[0].n,
+      2,
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select count(*)::integer as n from public.stride_sessions",
+        )
+      ).rows[0].n,
+      2,
+    );
+  });
+});
