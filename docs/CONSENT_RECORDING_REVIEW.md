@@ -1,6 +1,6 @@
 # Post-confirmation legal receipt implementation for review
 
-The owner approved a separate implementation for review on **2026-10-07 (Asia/Manila)** after the security audit PR. Production deployment is **not approved**. This follow-up depends on [PR #10](https://github.com/NotThatBoii/stride/pull/10) and stays draft/unmerged. It does not tag, publish, run hosted SQL, change Auth settings or change Cloudflare configuration.
+The owner approved a separate implementation for review on **2026-10-07 (Asia/Manila)** after the security audit PR. Production deployment is **not approved**. [PR #10](https://github.com/NotThatBoii/stride/pull/10) is merged at main commit `afe2111cedcdb36448dfa161e0cdc768f6b8dae5`. [PR #11](https://github.com/NotThatBoii/stride/pull/11) is rebased directly onto that main and stays draft/unmerged. The original follow-up patch was preserved identically before documentation/CI cleanup; no security-audit implementation is repeated in this diff. It does not tag, publish, run hosted SQL, change Auth settings or change Cloudflare configuration.
 
 ## User behavior
 
@@ -40,7 +40,9 @@ All pulls use 102 pages / 10,021 changes; all incremental batches use 100 operat
 
 ## Approval and future deployment order
 
-Approval of implementation for review does not authorize a production migration. Before any hosted deployment, present the exact reviewed app/SQL commit, target project, read/write verification and rollback for explicit approval. Confirm both dependent PRs' final checks and owner review. Apply approved SQL before enabling the reviewed frontend; verify private-schema non-exposure and same-owner/foreign-owner/anonymous behavior using disposable accounts. Do not infer production readiness from local test fixtures.
+The exact target, migration digest, catalog checks, live verification and rollback are in [the production deployment approval plan](CONSENT_RECORDING_DEPLOYMENT.md). That plan is prepared for approval and has not been executed. Fresh CI includes the six existing performance cases in addition to the other frontend, real integration and Windows checks; results are recorded on PR #11.
+
+Approval of implementation for review does not authorize a production migration. Before any hosted deployment, present the exact reviewed app/SQL commit, target project, read/write verification and rollback for explicit approval. Confirm the rebased PR #11's final checks and owner review. Apply approved SQL before enabling the reviewed frontend; verify private-schema non-exposure and same-owner/foreign-owner/anonymous behavior using disposable accounts. Do not infer production readiness from local test fixtures.
 
 ## Rollback without erasing evidence
 

@@ -17,7 +17,7 @@ on:
       - playwright.sync.config.ts
       - vitest.integration.config.ts
   pull_request:
-    branches: [main, codex/v1-security-hardening]
+    branches: [main]
     paths:
       - .github/workflows/supabase-integration.yml
       - package.json

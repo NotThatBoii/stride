@@ -22,4 +22,5 @@ jobs:
       - run: npm run test:e2e:hardening
       - run: npm run test:e2e:recovery
       - run: npm run test:e2e:stress
+      - run: npm run test:e2e:performance
       - run: npm run test:e2e:pwa
