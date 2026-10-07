@@ -22,7 +22,7 @@ on:
         ".github/workflows/windows.yml",
       ]
   pull_request:
-    branches: [main]
+    branches: [main, codex/v1-security-hardening]
     paths:
       [
         "src/**",

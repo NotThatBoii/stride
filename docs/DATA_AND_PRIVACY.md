@@ -1,6 +1,6 @@
 # Data & Privacy Notice
 
-Privacy Version: 2026-10-06
+Privacy Version: 2026-10-07
 
 This describes Stride's technical behavior. It is not a formal legal privacy policy, compliance certification or guarantee of security. Read it before creating an account and when deciding how to protect your study data.
 
@@ -14,6 +14,7 @@ This describes Stride's technical behavior. It is not a formal legal privacy pol
 | Appearance, notification preference, onboarding state | Local only | Not synchronized |
 | Pending operations, revisions/cursor, conflicts, recovery copies | Account-specific local safety state | Server has its own versions, change history, receipts and tombstones; local recovery copies do not upload |
 | JSON study/recovery exports | A file saved where you choose | Not uploaded by export |
+| Legal acknowledgment (when enabled) | Displayed while Account is open | Account identifier, document versions and first server receipt time |
 
 Supabase Auth stores the email address, account identity and authentication information. Its official client persists session credentials in the browser/WebView2 profile so eligible sessions can restore. Passwords are submitted to Supabase Auth over HTTPS and are not saved as Stride study records, backups, recovery records or synchronization payloads. Stride does not implement password hashing.
 
@@ -57,7 +58,11 @@ Stride has no self-service account-deletion screen. Deleting browser/Windows dat
 
 New signup in this build requires an unchecked-by-default control agreeing to the current Terms of Service and acknowledging this notice. Existing accounts can sign in without repeating signup. This is an app-side acknowledgement; it is not a durable server audit record or a claim that other clients are prevented from submitting signup directly to Supabase.
 
-Stride currently stores no terms/privacy acceptance version or acceptance timestamp in Auth metadata or a new database table. Durable recording is a separate proposal requiring owner approval and an intentional acceptance design. No IP address, browser/device fingerprint or other additional identifier is collected by Stride solely as consent evidence.
+After email confirmation, Account offers a separate, optional acknowledgment of the current document versions. When server recording is enabled, actively checking that control and choosing Record acknowledgment sends the Terms and Privacy version identifiers to Supabase. The server derives your account identity and records the first time it receives that pair. This is a post-confirmation acknowledgment time, not the earlier signup time and not proof that a person read the documents. Opening Account, signing in or reading a document does not create a receipt. Ordinary study access does not depend on recording it.
+
+A server receipt contains only your account identifier, Terms version, Privacy version and the server timestamp. It is separate from study synchronization and readable study backups, and it is not stored in Auth metadata. A repeated acknowledgment of the same pair preserves its first timestamp. Older versions are not silently treated as acceptance of newer documents. No IP address, browser/device fingerprint or other additional identifier is collected by Stride solely as consent evidence. Providers may still process operational requests as described above.
+
+Receipts are retained while the account exists; deleting the Supabase account removes its receipts. Signing out, removing local app data or reinstalling does not erase a server receipt. Privileged database administrators can administer those records; they are not cryptographically tamper-evident evidence. If recording is unavailable or the device is offline, the app offers safe retry guidance without inventing a receipt or blocking study access. This feature requires a separately reviewed database deployment; an implementation PR does not mean it has been enabled in production.
 
 ## Reporting problems
 

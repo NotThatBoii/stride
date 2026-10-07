@@ -1924,3 +1924,34 @@ dialog::backdrop {
 .load-more {
   margin: 15px 0;
 }
+
+.legal-acceptance {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.receipt-consent {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 11px;
+  align-items: start;
+  line-height: 1.8;
+}
+.receipt-consent input {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 2px 0 0;
+  accent-color: var(--action);
+}
+.receipt-consent a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.receipt-status {
+  overflow-wrap: anywhere;
+}
+.legal-acceptance > button {
+  max-width: 100%;
+}

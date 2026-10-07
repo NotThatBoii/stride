@@ -2,7 +2,7 @@
 // Set STRIDE_LOCAL_SUPABASE_URL, STRIDE_LOCAL_SUPABASE_PUBLIC_KEY, and
 // STRIDE_LOCAL_SUPABASE_ADMIN_KEY in the process environment. Never use hosted keys.
 import assert from "node:assert/strict";
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { test } from "node:test";
 
 const baseUrl = new URL(
@@ -25,9 +25,10 @@ if (
 
 const publicKey = process.env.STRIDE_LOCAL_SUPABASE_PUBLIC_KEY;
 const adminKey = process.env.STRIDE_LOCAL_SUPABASE_ADMIN_KEY;
-if (!publicKey || !adminKey) {
+const localJwtSecret = process.env.STRIDE_LOCAL_SUPABASE_JWT_SECRET;
+if (!publicKey || !adminKey || !localJwtSecret) {
   throw new Error(
-    "Set the local Supabase public and admin key environment variables before running integration tests",
+    "Run integration through the loopback-only runner with its local public/admin/JWT credentials",
   );
 }
 
@@ -129,6 +130,42 @@ async function deleteUser(user) {
     },
   );
   assertOk(result, "remove local test user");
+}
+
+const legalVersion = "2026-10-07";
+async function legal(token, action, extra = {}) {
+  assert.ok(["get", "record"].includes(action));
+  return request(`/rest/v1/rpc/${action}_legal_acceptance`, {
+    method: "POST",
+    token,
+    body: {
+      p_terms_version: legalVersion,
+      p_privacy_version: legalVersion,
+      ...extra,
+    },
+  });
+}
+function unconfirmedFixtureToken(id) {
+  // A valid local signature crosses the actual PostgREST JWT boundary while
+  // the trusted Auth row remains unconfirmed. This is a negative test only;
+  // ordinary Supabase Auth cannot issue this user's password session yet.
+  // Neither the local signing secret nor this short-lived token is logged.
+  const now = Math.floor(Date.now() / 1000);
+  const header = Buffer.from(
+    JSON.stringify({ alg: "HS256", typ: "JWT" }),
+  ).toString("base64url");
+  const claims = Buffer.from(
+    JSON.stringify({
+      sub: id,
+      role: "authenticated",
+      aud: "authenticated",
+      iss: `${baseUrl.origin}/auth/v1`,
+      iat: now,
+      exp: now + 300,
+    }),
+  ).toString("base64url");
+  const signed = `${header}.${claims}`;
+  return `${signed}.${createHmac("sha256", localJwtSecret).update(signed).digest("base64url")}`;
 }
 
 async function apply(
@@ -1099,6 +1136,214 @@ test(
               ],
             );
           }
+        },
+      );
+      await t.test(
+        "post-confirmation receipts are owner-scoped, concurrent/idempotent and read without changing study sync",
+        async () => {
+          const beforeAlice = assertOk(
+            await pull(alice.token),
+            "receipt Alice study feed",
+          );
+          const beforeBob = assertOk(
+            await pull(bob.token),
+            "receipt Bob study feed",
+          );
+          assert.equal(
+            assertOk(
+              await legal(alice.token, "get"),
+              "Alice receipt before acknowledgment",
+            ),
+            null,
+          );
+          assert.equal(
+            assertOk(
+              await legal(bob.token, "get"),
+              "Bob receipt before acknowledgment",
+            ),
+            null,
+          );
+          const before = Date.now();
+          const concurrent = (
+            await Promise.all([
+              legal(alice.token, "record"),
+              legal(alice.token, "record"),
+            ])
+          ).map((value) => assertOk(value, "concurrent receipt submission"));
+          assert.deepEqual(concurrent[0], concurrent[1]);
+          const first = concurrent[0];
+          assert.deepEqual(Object.keys(first).sort(), [
+            "accepted_at",
+            "privacy_version",
+            "terms_version",
+          ]);
+          assert.equal(first.terms_version, legalVersion);
+          assert.equal(first.privacy_version, legalVersion);
+          assert.ok(Number.isFinite(Date.parse(first.accepted_at)));
+          assert.ok(
+            Date.parse(first.accepted_at) >= before - 1000 &&
+              Date.parse(first.accepted_at) <= Date.now() + 1000,
+          );
+          assert.deepEqual(
+            assertOk(await legal(alice.token, "get"), "Alice receipt read"),
+            first,
+          );
+          assert.equal(
+            assertOk(
+              await legal(bob.token, "get"),
+              "Bob must not read Alice receipt",
+            ),
+            null,
+          );
+          const both = (
+            await Promise.all([
+              legal(alice.token, "record"),
+              legal(bob.token, "record"),
+            ])
+          ).map((value) => assertOk(value, "independent account receipt"));
+          assert.deepEqual(both[0], first);
+          assert.deepEqual(
+            assertOk(await legal(bob.token, "get"), "Bob current receipt"),
+            both[1],
+          );
+          assert.deepEqual(
+            assertOk(
+              await legal(alice.token, "get"),
+              "Alice unchanged receipt",
+            ),
+            first,
+          );
+          assert.deepEqual(
+            assertOk(await pull(alice.token), "Alice sync after receipts"),
+            beforeAlice,
+          );
+          assert.deepEqual(
+            assertOk(await pull(bob.token), "Bob sync after receipts"),
+            beforeBob,
+          );
+        },
+      );
+
+      await t.test(
+        "receipt APIs deny anonymous/unconfirmed identities, version spoofing, forged fields and private table access",
+        async () => {
+          const email = `stride-consent-unconfirmed-${randomUUID()}@example.test`;
+          const password = randomBytes(24).toString("base64url");
+          const pending = assertOk(
+            await request("/auth/v1/admin/users", {
+              method: "POST",
+              key: adminKey,
+              body: { email, password, email_confirm: false },
+            }),
+            "create local unconfirmed consent user",
+          );
+          assert.match(pending.id, /^[0-9a-f-]{36}$/i);
+          users.push({ id: pending.id });
+          assert.equal(pending.email_confirmed_at ?? null, null);
+          const unconfirmedSignIn = await request(
+            "/auth/v1/token?grant_type=password",
+            {
+              method: "POST",
+              body: { email, password },
+            },
+          );
+          assertInvalid(unconfirmedSignIn, "unconfirmed password sign-in");
+          assert.equal(
+            unconfirmedSignIn.data?.error_code ?? unconfirmedSignIn.data?.code,
+            "email_not_confirmed",
+          );
+          const token = unconfirmedFixtureToken(pending.id);
+          // Prove this is a valid authenticated fixture, not a blanket bad-JWT
+          // rejection: the unchanged sync RPC accepts its authenticated owner.
+          assertOk(
+            await pull(token),
+            "locally signed unconfirmed JWT reaches authenticated RPC",
+          );
+          const first = assertOk(
+            await legal(alice.token, "get"),
+            "Alice receipt before denied requests",
+          );
+          for (const action of ["get", "record"]) {
+            assertDenied(
+              await legal(undefined, action),
+              "anonymous receipt request",
+            );
+            const unconfirmed = await legal(token, action);
+            assertDenied(unconfirmed, "trusted unconfirmed receipt request");
+            assert.equal(unconfirmed.data?.code, "42501");
+            for (const extra of [
+              { p_terms_version: "2026-10-06" },
+              { p_privacy_version: "2099-01-01" },
+              { p_terms_version: null },
+              { p_privacy_version: "" },
+              { p_terms_version: "2026-10-07'); DROP TABLE auth.users; --" },
+            ])
+              assertInvalid(
+                await legal(alice.token, action, extra),
+                "unsupported legal version",
+              );
+            for (const extra of [
+              { owner_id: bob.id },
+              { p_owner_id: bob.id },
+              { accepted_at: "2000-01-01T00:00:00Z" },
+              { p_accepted_at: "2000-01-01T00:00:00Z" },
+            ])
+              assertInvalid(
+                await legal(alice.token, action, extra),
+                "forged receipt argument",
+              );
+          }
+          for (const method of ["GET", "POST", "PATCH", "DELETE"]) {
+            const hidden = await request(
+              "/rest/v1/stride_legal_acceptances?select=*&limit=0",
+              {
+                method,
+                token: alice.token,
+                headers:
+                  method === "GET"
+                    ? { "Accept-Profile": "stride_private" }
+                    : { "Content-Profile": "stride_private" },
+                ...(method === "POST" || method === "PATCH"
+                  ? { body: { owner_id: bob.id } }
+                  : {}),
+              },
+            );
+            assert.equal(
+              hidden.data?.code,
+              "PGRST106",
+              "receipt relation must remain outside API exposure",
+            );
+          }
+          for (const name of [
+            "get_legal_acceptance_core",
+            "record_legal_acceptance_core",
+          ]) {
+            assert.equal(
+              (
+                await request(`/rest/v1/rpc/${name}`, {
+                  method: "POST",
+                  token: alice.token,
+                  body: {
+                    p_terms_version: legalVersion,
+                    p_privacy_version: legalVersion,
+                  },
+                })
+              ).status,
+              404,
+              "private receipt core must not be public RPC",
+            );
+          }
+          assert.deepEqual(
+            assertOk(
+              await legal(alice.token, "get"),
+              "Alice receipt after denied requests",
+            ),
+            first,
+          );
+          assertOk(
+            await pull(bob.token),
+            "Bob study API remains available after SQL-shaped version",
+          );
         },
       );
     } finally {

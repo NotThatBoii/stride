@@ -1,8 +1,8 @@
 # Proposed durable legal acknowledgment receipts
 
-Status: **NEEDS APPROVAL — DESIGN ONLY**. Proposed on 2026-10-06 (Asia/Manila). Nothing in this document is an instruction to apply hosted SQL, change Supabase Auth metadata/configuration, or activate a new runtime flow. The current security PR implements the required explicit signup checkbox and versioned legal documents, without claiming a durable server audit record.
+Status: **HISTORICAL DESIGN — NOT DEPLOYED**. The owner approved a separate implementation for review on 2026-10-07; see [the implementation review](../CONSENT_RECORDING_REVIEW.md). Production deployment remains unapproved. This original prototype and its 2026-10-06 version pair are preserved as audit evidence. Proposed on 2026-10-06 (Asia/Manila). Nothing in this document is an instruction to apply hosted SQL, change Supabase Auth metadata/configuration, or activate a new runtime flow. The current security PR implements the required explicit signup checkbox and versioned legal documents, without claiming a durable server audit record.
 
-This proposal and its SQL live under `docs/proposals/`. Its SQL must stay outside `supabase/migrations/` until the owner separately approves implementation and deployment. No table, RPC, grant, policy, Auth hook, or production setting has been deployed. The isolated prototype does not contact hosted Supabase.
+This original proposal and its prototype SQL stay under `docs/proposals/` as historical audit evidence. The separately approved implementation now has a reviewable migration described in the implementation review; it may run only in disposable local/CI databases. Approval to prepare that file is not approval to apply hosted SQL. No hosted table, RPC, grant, policy, Auth hook or production setting has been deployed. The isolated prototype does not contact hosted Supabase.
 
 ## What the proposed record establishes
 

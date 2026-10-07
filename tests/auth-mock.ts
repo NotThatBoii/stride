@@ -31,22 +31,28 @@ interface MockOptions {
   holdLogout?: boolean;
   holdRefresh?: boolean;
   passwordExpiresIn?: number;
+  confirmed?: boolean;
 }
 
-function userFor(email: keyof typeof users) {
+function userFor(email: keyof typeof users, confirmed = true) {
   return {
     id: users[email],
     email,
     aud: "authenticated",
     role: "authenticated",
     created_at: "2026-09-20T10:00:00.000Z",
+    email_confirmed_at: confirmed ? "2026-09-20T10:00:00.000Z" : null,
     app_metadata: { provider: "email", providers: ["email"] },
     user_metadata: {},
     identities: [],
   };
 }
 
-function sessionFor(email: keyof typeof users, expiresIn = 3600) {
+function sessionFor(
+  email: keyof typeof users,
+  expiresIn = 3600,
+  confirmed = true,
+) {
   const encoded = (value: object) =>
     Buffer.from(JSON.stringify(value)).toString("base64url");
   const accessToken = `${encoded({ alg: "HS256", typ: "JWT" })}.${encoded({ sub: users[email], role: "authenticated", aud: "authenticated", exp: Math.floor(Date.now() / 1000) + expiresIn })}.test`;
@@ -55,7 +61,7 @@ function sessionFor(email: keyof typeof users, expiresIn = 3600) {
     token_type: "bearer",
     expires_in: expiresIn,
     refresh_token: `refresh-${users[email]}`,
-    user: userFor(email),
+    user: userFor(email, confirmed),
   };
 }
 
@@ -85,6 +91,15 @@ export async function mockAuth(page: Page, options: MockOptions = {}) {
         body: JSON.stringify(body),
       });
     if (request.method() === "OPTIONS") return respond(200, {});
+    if (
+      /^\/rest\/v1\/rpc\/(get_legal_acceptance|record_legal_acceptance)$/.test(
+        url.pathname,
+      )
+    )
+      return respond(404, {
+        code: "PGRST202",
+        message: "Test receipt service is not deployed",
+      });
     if (url.pathname.startsWith("/rest/v1/")) {
       const account = requestAccount(request);
       calls.push(`sync-authorized:${account ?? "none"}`);
@@ -108,7 +123,10 @@ export async function mockAuth(page: Page, options: MockOptions = {}) {
             code: "invalid_credentials",
             message: "Invalid login credentials",
           });
-        return respond(200, sessionFor(email, options.passwordExpiresIn));
+        return respond(
+          200,
+          sessionFor(email, options.passwordExpiresIn, options.confirmed),
+        );
       }
       if (url.searchParams.get("grant_type") === "refresh_token") {
         if (options.holdRefresh) await refreshGate;
@@ -119,14 +137,17 @@ export async function mockAuth(page: Page, options: MockOptions = {}) {
           (key) => refreshToken === `refresh-${users[key]}`,
         );
         return email
-          ? respond(200, sessionFor(email))
+          ? respond(200, sessionFor(email, 3600, options.confirmed))
           : respond(400, { message: "Invalid refresh token" });
       }
     }
     if (url.pathname === "/auth/v1/signup") {
       const { email } = request.postDataJSON() as { email: string };
       if (options.signupSession && email in users)
-        return respond(200, sessionFor(email as keyof typeof users));
+        return respond(
+          200,
+          sessionFor(email as keyof typeof users, 3600, options.confirmed),
+        );
       return respond(200, {
         user: {
           id: "33333333-3333-4333-8333-333333333333",
@@ -162,7 +183,7 @@ export async function mockAuth(page: Page, options: MockOptions = {}) {
         (key) => users[key] === id,
       );
       return email
-        ? respond(200, userFor(email))
+        ? respond(200, userFor(email, options.confirmed))
         : respond(401, { message: "Unauthorized" });
     }
     return respond(404, { message: "Unexpected request" });
@@ -246,7 +267,10 @@ export function expectAccountStudySync(
   allowedAccounts: string[] = [users["first@example.test"]],
 ) {
   const requests = calls.filter(
-    (call) => call.includes("/rest/v1/") && !call.startsWith("OPTIONS "),
+    (call) =>
+      call.includes("/rest/v1/") &&
+      !call.startsWith("OPTIONS ") &&
+      !/\/rpc\/(get_legal_acceptance|record_legal_acceptance)$/.test(call),
   );
   const owners = calls.filter((call) => call.startsWith("sync-authorized:"));
   expect(owners).toHaveLength(requests.length);
