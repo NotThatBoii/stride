@@ -10,7 +10,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "node scripts/build-web.mjs",
     "test": "vitest run",
-    "test:db": "node --test supabase/tests/sync.test.mjs",
+    "test:db": "node --test supabase/tests/sync.test.mjs supabase/tests/legal-acceptances.test.mjs",
     "test:consent-proposal": "node --test tests/security/consent-recording-proposal.test.mjs",
     "test:integration": "node scripts/run-local-integration.mjs",
     "test:release-config": "node --test scripts/public-build-config.test.mjs scripts/release-version.test.mjs",

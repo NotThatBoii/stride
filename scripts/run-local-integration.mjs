@@ -53,6 +53,9 @@ if (!existsSync(cli)) {
         values.PUBLISHABLE_KEY ?? values.ANON_KEY ?? values.anon_key;
       const adminKey =
         values.SECRET_KEY ?? values.SERVICE_ROLE_KEY ?? values.service_role_key;
+      // Used only to sign a disposable unconfirmed-user negative fixture.
+      // Never inherit a hosted secret or print the CLI status/secret/token.
+      const localJwtSecret = values.JWT_SECRET ?? values.jwt_secret;
       let url;
       try {
         url = new URL(apiUrl);
@@ -72,6 +75,13 @@ if (!existsSync(cli)) {
           url.hash)
       ) {
         fail("Supabase status points outside the plain HTTP loopback API.");
+        url = undefined;
+      }
+
+      if (url && (typeof localJwtSecret !== "string" || !localJwtSecret)) {
+        fail(
+          "Supabase status did not return the local JWT secret required for the confirmation-boundary fixture.",
+        );
         url = undefined;
       }
 
@@ -95,7 +105,7 @@ if (!existsSync(cli)) {
         };
         const result = spawnSync(process.execPath, ["--test", tests], {
           cwd: root,
-          env: testEnv,
+          env: { ...testEnv, STRIDE_LOCAL_SUPABASE_JWT_SECRET: localJwtSecret },
           stdio: "inherit",
           windowsHide: true,
         });

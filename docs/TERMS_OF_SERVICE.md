@@ -1,6 +1,6 @@
 # Terms of Service
 
-Terms Version: 2026-10-06
+Terms Version: 2026-10-07
 
 These terms describe use of Stride's hosted web app, PWA and Windows app. Stride is a small independent software project maintained through [NotThatBoii/stride](https://github.com/NotThatBoii/stride). The source code's [MIT licence](https://github.com/NotThatBoii/stride/blob/main/LICENSE) remains separate; these terms do not remove rights granted by that licence.
 
@@ -8,7 +8,7 @@ These terms describe use of Stride's hosted web app, PWA and Windows app. Stride
 
 Stride helps you organize study subjects, record completed study sessions and view your progress. An email/password account is required for a study workspace. Supabase Auth handles account authentication and email confirmation. Keep your account credentials private, use an account you are entitled to access, and protect the devices and browser profiles where you sign in.
 
-The signup screen asks you to actively agree to these terms and acknowledge the Data & Privacy Notice before it submits account creation. Existing accounts can continue signing in. The present app does not keep a durable server record of the accepted document versions or acceptance time; adding that record requires a separate approved change.
+The signup screen asks you to actively agree to these terms and acknowledge the Data & Privacy Notice before it submits account creation. Existing accounts can continue signing in. After email confirmation, Account offers a separate optional acknowledgment of the current versions. Where server recording has been enabled, an explicit choice records the server's first receipt time for that pair. It does not establish the earlier signup time or prove that a person read the documents. Signing in, opening Account or continuing study does not automatically accept changed documents, and a pending receipt does not block study access. See the Data & Privacy Notice for receipt contents, retention and limits.
 
 ## Acceptable use
 

@@ -74,3 +74,5 @@ A possible later direction is activities and tracked entries, with duration, cou
 ## License
 
 [MIT](LICENSE).
+
+Optional post-confirmation legal receipts are prepared separately for review. See [implementation and deployment boundaries](docs/CONSENT_RECORDING_REVIEW.md); production database deployment still requires explicit approval.

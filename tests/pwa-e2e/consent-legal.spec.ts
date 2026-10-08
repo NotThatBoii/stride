@@ -30,7 +30,7 @@ test("compiled PWA legal documents remain readable after a signed-out offline re
     await expect(dialog).toBeVisible();
     await expect(dialog.locator("article")).toHaveAttribute(
       "data-version",
-      "2026-10-06",
+      "2026-10-07",
     );
     await expect(dialog).toContainText(
       title === "Terms of Service"
