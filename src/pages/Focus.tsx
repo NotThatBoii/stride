@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Play, Pause, Check, Timer, ArrowRight } from "lucide-react";
 import { useStride } from "../state";
-import { activeSegments, elapsed } from "../lib/timer";
+import {
+  activeSegments,
+  elapsed,
+  resumeTimer,
+  assertTimerOrder,
+} from "../lib/timer";
 import { saveRunning, saveSession } from "../lib/storage";
 import { splitSegments, formatTime } from "../lib/analytics";
 import { Modal } from "../components/UI";
@@ -84,6 +89,7 @@ export default function Focus({
     const end = segments.at(-1)?.end ?? Date.now();
     if (
       await act(async () => {
+        assertTimerOrder(timer);
         // Keep malformed or excessive recovered intervals inside the existing
         // failure boundary. An unsuccessful save must retain the paused timer.
         const slices = splitSegments(timer.id, segments);
@@ -264,9 +270,7 @@ export default function Focus({
                     onClick={() =>
                       timer.runningSince
                         ? void pause()
-                        : void act(() =>
-                            saveRunning({ ...timer, runningSince: Date.now() }),
-                          )
+                        : void act(() => saveRunning(resumeTimer(timer)))
                     }
                   >
                     {timer.runningSince ? (

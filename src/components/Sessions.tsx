@@ -5,13 +5,20 @@ import { useStride } from "../state";
 import { dayKey, shiftDay, formatTime, splitSegments } from "../lib/analytics";
 import { deleteSession, saveSession } from "../lib/storage";
 import { Modal } from "./UI";
+import { useEditSnapshot } from "./useEditSnapshot";
 const localInput = (iso: string) => {
   const d = new Date(iso);
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
     .toISOString()
     .slice(0, 16);
 };
-export function SessionList({ sessions }: { sessions: Session[] }) {
+export function SessionList({
+  sessions,
+  hideList = false,
+}: {
+  sessions: Session[];
+  hideList?: boolean;
+}) {
   const { data, act, busy, now } = useStride();
   const [editing, setEditing] = useState<Session>();
   const [deleting, setDeleting] = useState<Session>();
@@ -21,7 +28,7 @@ export function SessionList({ sessions }: { sessions: Session[] }) {
   );
   return (
     <>
-      <div className="session-list">
+      <div className="session-list" hidden={hideList}>
         {sorted.slice(0, visibleCount).map((s, index) => {
           const subject = data.subjects.find((x) => x.id === s.subject_id);
           const date = dayKey(new Date(s.started_at));
@@ -153,6 +160,11 @@ function SessionEditor({
   onClose: () => void;
 }) {
   const { data, act, busy } = useStride();
+  const [original] = useState(() => ({
+    session: s,
+    slices: data.slices.filter((x) => x.session_id === s.id),
+  }));
+  const edit = useEditSnapshot("session", s.id, original);
   const [title, setTitle] = useState(s.session_title);
   const [notes, setNotes] = useState(s.notes);
   const [subject, setSubject] = useState(s.subject_id);
@@ -164,6 +176,7 @@ function SessionEditor({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+          if (!edit.ready) return;
           const seconds = Number(duration) * 60;
           const from = new Date(start).getTime();
           const changed =
@@ -192,8 +205,9 @@ function SessionEditor({
           };
           const slices = changed
             ? splitSegments(s.id, [{ start: from, end: to }])
-            : data.slices.filter((x) => x.session_id === s.id);
-          if (await act(() => saveSession(next, slices))) onClose();
+            : original.slices;
+          if (await act(() => saveSession(next, slices, edit.snapshot)))
+            onClose();
         }}
       >
         <label>
@@ -250,16 +264,16 @@ function SessionEditor({
             onChange={(e) => setNotes(e.target.value)}
           />
         </label>
-        {error && (
+        {(error || edit.error) && (
           <p role="alert" className="error">
-            {error}
+            {error || edit.error}
           </p>
         )}
         <div className="dialog-actions">
           <button type="button" className="secondary" onClick={onClose}>
             Cancel
           </button>
-          <button disabled={busy}>Save changes</button>
+          <button disabled={busy || !edit.ready}>Save changes</button>
         </div>
       </form>
     </Modal>

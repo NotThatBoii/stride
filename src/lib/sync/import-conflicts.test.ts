@@ -1100,7 +1100,7 @@ describe("conflict preservation and deliberate resolution", () => {
       (await db.pendingOperations.toArray()).map(
         (operation) => operation.record_id,
       ),
-    ).toEqual([clone.id, clonedSession.id]);
+    ).toEqual([session.id, clone.id, clonedSession.id]);
   });
 
   it("protects a remote subject deletion when a local child or active timer needs it", async () => {

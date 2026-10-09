@@ -9,7 +9,7 @@ import {
   type Subject,
 } from "../models";
 import { validateData } from "./validation";
-import { activeSegments } from "./timer";
+import { activeSegments, assertTimerOrder } from "./timer";
 import type { WireOperation } from "./sync/types";
 
 export type SyncEntity = "subject" | "session" | "settings";
@@ -260,6 +260,88 @@ function sortedSlices(slices: Slice[]): Slice[] {
   return [...slices].sort((a, b) => a.day.localeCompare(b.day));
 }
 
+export interface EditSnapshot {
+  entity: "subject" | "session";
+  recordId: string;
+  payload: Subject | { session: Session; slices: Slice[] };
+  revision: string | null;
+  workspaceGeneration: number;
+}
+
+const staleDraftMessage =
+  "This record changed on another device or window. Your draft is still here. Copy any edits you want to keep, close this editor, and reopen the latest version.";
+
+async function editPayload(
+  db: StrideDatabase,
+  entity: EditSnapshot["entity"],
+  id: string,
+) {
+  if (entity === "subject") return db.subjects.get(id);
+  const session = await db.sessions.get(id);
+  return session
+    ? {
+        session,
+        slices: sortedSlices(
+          await db.slices.where("session_id").equals(id).toArray(),
+        ),
+      }
+    : undefined;
+}
+
+function normalizeEditPayload(payload: EditSnapshot["payload"]) {
+  return "session" in payload
+    ? { session: payload.session, slices: sortedSlices(payload.slices) }
+    : payload;
+}
+
+// Capture the displayed record and revision together. Never attach the latest
+// revision to a draft whose fields came from an older record.
+export async function captureEditSnapshot(
+  entity: EditSnapshot["entity"],
+  recordId: string,
+  displayed: EditSnapshot["payload"],
+): Promise<EditSnapshot> {
+  const db = activeDatabase,
+    workspaceGeneration = selection.generation;
+  return db.transaction(
+    "r",
+    [db.subjects, db.sessions, db.slices, db.recordRevisions],
+    async () => {
+      const payload = await editPayload(db, entity, recordId);
+      const revision =
+        (await db.recordRevisions.get([entity, recordId]))?.server_revision ??
+        null;
+      if (
+        selection.generation !== workspaceGeneration ||
+        !payload ||
+        !same(payload, normalizeEditPayload(displayed))
+      )
+        throw new Error(staleDraftMessage);
+      return { entity, recordId, payload, revision, workspaceGeneration };
+    },
+  );
+}
+
+async function assertEditSnapshot(
+  db: StrideDatabase,
+  entity: EditSnapshot["entity"],
+  id: string,
+  expected?: EditSnapshot,
+) {
+  if (!expected) return;
+  const payload = await editPayload(db, entity, id);
+  const revision =
+    (await db.recordRevisions.get([entity, id]))?.server_revision ?? null;
+  if (
+    expected.entity !== entity ||
+    expected.recordId !== id ||
+    expected.workspaceGeneration !== selection.generation ||
+    !same(payload, expected.payload) ||
+    revision !== expected.revision
+  )
+    throw new Error(staleDraftMessage);
+}
+
 export async function enqueueOperation(
   db: StrideDatabase,
   entity: SyncEntity,
@@ -314,7 +396,10 @@ function sharedSettings(settings: Settings) {
   };
 }
 
-export async function saveSubject(subject: Subject): Promise<void> {
+export async function saveSubject(
+  subject: Subject,
+  expected?: EditSnapshot,
+): Promise<void> {
   const db = activeDatabase;
   await db.transaction(
     "rw",
@@ -322,6 +407,7 @@ export async function saveSubject(subject: Subject): Promise<void> {
     db.pendingOperations,
     db.recordRevisions,
     async () => {
+      await assertEditSnapshot(db, "subject", subject.id, expected);
       if (same(await db.subjects.get(subject.id), subject)) return;
       await db.subjects.put(subject);
       await enqueue(db, "subject", subject.id, "upsert", subject);
@@ -329,7 +415,10 @@ export async function saveSubject(subject: Subject): Promise<void> {
   );
 }
 
-export async function deleteSubject(id: string): Promise<void> {
+export async function deleteSubject(
+  id: string,
+  expected?: EditSnapshot,
+): Promise<void> {
   const db = activeDatabase;
   await db.transaction(
     "rw",
@@ -344,6 +433,7 @@ export async function deleteSubject(id: string): Promise<void> {
       db.preferences,
     ],
     async () => {
+      await assertEditSnapshot(db, "subject", id, expected);
       if ((await db.timers.get(1))?.value.subjectId === id)
         throw new Error(
           "Finish the active session before deleting its subject.",
@@ -388,6 +478,7 @@ export async function deleteSubject(id: string): Promise<void> {
 export async function saveSession(
   session: Session,
   slices: Slice[],
+  expected?: EditSnapshot,
 ): Promise<void> {
   const db = activeDatabase;
   await db.transaction(
@@ -401,6 +492,7 @@ export async function saveSession(
       db.recordRevisions,
     ],
     async () => {
+      await assertEditSnapshot(db, "session", session.id, expected);
       const subject = await db.subjects.get(session.subject_id);
       if (!subject) throw new Error("This subject no longer exists.");
       validateData({
@@ -531,8 +623,16 @@ export async function saveRunning(running: Running | null): Promise<void> {
       if (await db.sessions.get(running.id))
         throw new Error("This session has already been saved.");
       const subject = await db.subjects.get(running.subjectId);
-      if (!subject || subject.archived)
+      if (
+        !subject ||
+        (subject.archived &&
+          !(
+            current?.id === running.id &&
+            current.subjectId === running.subjectId
+          ))
+      )
         throw new Error("Choose an active subject.");
+      assertTimerOrder(running);
       await db.timers.put({ id: 1, value: running });
     },
   );

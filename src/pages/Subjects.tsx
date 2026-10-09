@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { Subject } from "../models";
 import { Plus, Settings2, Play, ArrowLeft } from "lucide-react";
 import { useStride } from "../state";
 import { Stat, SubjectCard } from "../components/UI";
@@ -80,14 +81,24 @@ export function SubjectDetail({
   onDay: (d: string) => void;
 }) {
   const { data, now } = useStride();
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState<Subject>();
   const subject = data.subjects.find((s) => s.id === id);
   if (!subject)
     return (
-      <div className="empty">
-        <h2>Subject removed</h2>
-        <button onClick={onBack}>Back to subjects</button>
-      </div>
+      <>
+        <div className="empty">
+          <h2>Subject removed</h2>
+          <button onClick={onBack}>Back to subjects</button>
+        </div>
+        <SessionList key="subject-sessions" sessions={[]} hideList />
+        {editing && (
+          <SubjectEditor
+            key="subject-editor"
+            subject={editing}
+            onClose={() => setEditing(undefined)}
+          />
+        )}
+      </>
     );
   const sessions = data.sessions.filter((s) => s.subject_id === id);
   const days = aggregate(sessions, data.slices);
@@ -113,7 +124,7 @@ export function SubjectDetail({
           <button
             className="secondary"
             aria-label="Edit subject"
-            onClick={() => setEditing(true)}
+            onClick={() => setEditing(subject)}
           >
             <Settings2 size={17} />
           </button>
@@ -162,9 +173,13 @@ export function SubjectDetail({
       <div className="section-heading">
         <h2>Study history</h2>
       </div>
-      <SessionList sessions={sessions} />
+      <SessionList key="subject-sessions" sessions={sessions} />
       {editing && (
-        <SubjectEditor subject={subject} onClose={() => setEditing(false)} />
+        <SubjectEditor
+          key="subject-editor"
+          subject={editing}
+          onClose={() => setEditing(undefined)}
+        />
       )}
     </>
   );
