@@ -10,8 +10,18 @@ import {
   saveRunning,
   deleteSession,
   deleteSubject,
+  captureEditSnapshot,
+  selectWorkspace,
+  getActiveDatabase,
 } from "./storage";
-import { defaults, type Data, type Subject } from "../models";
+import { defaults, type Data, type Subject, type Running } from "../models";
+import {
+  resumeTimer,
+  activeSegments,
+  elapsed,
+  assertTimerOrder,
+} from "./timer";
+import { splitSegments } from "./analytics";
 import { parseBackup, validateData } from "./validation";
 const subject: Subject = {
   id: "math",
@@ -42,6 +52,7 @@ const sample = (): Data => ({
   running: null,
 });
 beforeEach(async () => {
+  selectWorkspace(null);
   await database.delete();
   await database.open();
 });
@@ -116,6 +127,278 @@ describe("IndexedDB persistence", () => {
     expect((await readData()).subjects).toEqual(sample().subjects);
   });
 });
+describe("editor compare-and-save", () => {
+  it("allows ordinary subject and text-only session edits without changing allocations", async () => {
+    await initialize(database, JSON.stringify(sample()));
+    const original = sample().sessions[0];
+    const subjectEdit = await captureEditSnapshot(
+      "subject",
+      subject.id,
+      subject,
+    );
+    const sessionEdit = await captureEditSnapshot("session", original.id, {
+      session: original,
+      slices: sample().slices,
+    });
+    await saveSubject({ ...subject, name: "New name" }, subjectEdit);
+    await saveSession(
+      { ...original, notes: "New notes" },
+      sample().slices,
+      sessionEdit,
+    );
+    expect((await readData()).slices).toEqual(sample().slices);
+    expect((await readData()).sessions[0].notes).toBe("New notes");
+  });
+
+  it.each(["changed", "archived", "deleted", "revision"])(
+    "rejects a subject draft after the record is %s, without any write",
+    async (change) => {
+      await initialize(database, JSON.stringify(sample()));
+      const edit = await captureEditSnapshot("subject", subject.id, subject);
+      if (change === "deleted") await deleteSubject(subject.id);
+      else if (change === "revision")
+        await database.recordRevisions.put({
+          entity: "subject",
+          record_id: subject.id,
+          server_revision: "2",
+          updated_at: subject.created_at,
+        });
+      else
+        await saveSubject({
+          ...subject,
+          description: "Remote text",
+          archived: change === "archived" ? 1 : 0,
+        });
+      const before = await readData();
+      await expect(
+        saveSubject({ ...subject, name: "Draft" }, edit),
+      ).rejects.toThrow("Your draft");
+      await expect(deleteSubject(subject.id, edit)).rejects.toThrow(
+        "Your draft",
+      );
+      expect(await readData()).toEqual(before);
+    },
+  );
+
+  it.each(["changed", "deleted", "allocations", "revision"])(
+    "rejects a session draft after %s changes, without any write",
+    async (change) => {
+      await initialize(database, JSON.stringify(sample()));
+      const original = sample().sessions[0];
+      const edit = await captureEditSnapshot("session", original.id, {
+        session: original,
+        slices: sample().slices,
+      });
+      if (change === "deleted") await deleteSession(original.id);
+      else if (change === "revision")
+        await database.recordRevisions.put({
+          entity: "session",
+          record_id: original.id,
+          server_revision: "2",
+          updated_at: subject.created_at,
+        });
+      else if (change === "allocations")
+        await database.slices.put({ ...sample().slices[0], seconds: 1199 });
+      else
+        await saveSession(
+          { ...original, notes: "Remote notes" },
+          sample().slices,
+        );
+      const before = await readData();
+      await expect(
+        saveSession({ ...original, notes: "Draft" }, sample().slices, edit),
+      ).rejects.toThrow("Your draft");
+      expect(await readData()).toEqual(before);
+    },
+  );
+
+  it("refuses to capture stale visible fields and refuses a snapshot after switching accounts", async () => {
+    await initialize(database, JSON.stringify(sample()));
+    await expect(
+      captureEditSnapshot("subject", subject.id, { ...subject, name: "Old" }),
+    ).rejects.toThrow("Your draft");
+    const edit = await captureEditSnapshot("subject", subject.id, subject);
+    selectWorkspace("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    const account = getActiveDatabase();
+    try {
+      await initialize(account, null);
+      await saveSubject(subject);
+      await expect(
+        saveSubject({ ...subject, name: "Wrong account" }, edit),
+      ).rejects.toThrow("Your draft");
+      expect((await readData(account)).subjects).toEqual([subject]);
+      expect(await account.pendingOperations.count()).toBe(1);
+    } finally {
+      selectWorkspace(null);
+      await account.delete();
+    }
+  });
+
+  it("serializes a newer write ahead of a stale save and rolls back its outbox mutation", async () => {
+    selectWorkspace("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    const account = getActiveDatabase();
+    try {
+      await initialize(account, null);
+      await saveSubject(subject);
+      const edit = await captureEditSnapshot("subject", subject.id, subject);
+      const newer = saveSubject({
+        ...subject,
+        description: "New remote value",
+      });
+      const stale = saveSubject({ ...subject, name: "Old draft" }, edit);
+      await newer;
+      await expect(stale).rejects.toThrow("Your draft");
+      expect((await readData()).subjects[0].description).toBe(
+        "New remote value",
+      );
+      const ops = await account.pendingOperations.toArray();
+      expect(ops).toHaveLength(1);
+      expect(ops[0].payload).toMatchObject({
+        name: subject.name,
+        description: "New remote value",
+      });
+    } finally {
+      selectWorkspace(null);
+      await account.delete();
+    }
+  });
+});
+
+describe("timer archive and clock integrity", () => {
+  const start = new Date(2026, 8, 21, 23, 50).getTime();
+  const timer = (): Running => ({
+    id: "timer",
+    subjectId: subject.id,
+    startedAt: new Date(start).toISOString(),
+    title: "",
+    mode: "stopwatch",
+    target: 1500,
+    segments: [],
+    runningSince: start,
+    notified: false,
+  });
+
+  it("updates an existing archived-subject timer across restart and saves the original midnight allocations", async () => {
+    await initialize(database, null);
+    await saveSubject(subject);
+    await saveRunning(timer());
+    await saveSubject({ ...subject, archived: 1 });
+    const paused = {
+      ...timer(),
+      segments: activeSegments(timer(), start + 1200000),
+      runningSince: null,
+    };
+    await saveRunning(paused);
+    database.close();
+    await database.open();
+    expect((await readData()).running).toEqual(paused);
+    await saveRunning(resumeTimer(paused, start + 1800000));
+    await saveRunning(paused);
+    await saveSession(
+      {
+        ...sample().sessions[0],
+        id: paused.id,
+        started_at: paused.startedAt,
+        ended_at: new Date(start + 1200000).toISOString(),
+      },
+      splitSegments(paused.id, paused.segments),
+    );
+    const data = await readData();
+    expect(data.running).toBeNull();
+    expect(data.slices).toEqual([
+      { session_id: "timer", day: "2026-09-21", seconds: 600 },
+      { session_id: "timer", day: "2026-09-22", seconds: 600 },
+    ]);
+    await expect(saveRunning({ ...timer(), id: "new" })).rejects.toThrow(
+      "active subject",
+    );
+  });
+
+  it("rejects backward resume atomically, retaining all ten minutes after restart", async () => {
+    await initialize(database, null);
+    await saveSubject(subject);
+    const paused = {
+      ...timer(),
+      segments: activeSegments(timer(), start + 600000),
+      runningSince: null,
+    };
+    await saveRunning(paused);
+    expect(() => resumeTimer(paused, start + 300000)).toThrow(
+      "clock moved backward",
+    );
+    await expect(
+      saveRunning({ ...paused, runningSince: start + 300000 }),
+    ).rejects.toThrow("clock moved backward");
+    database.close();
+    await database.open();
+    expect((await readData()).running).toEqual(paused);
+    expect(elapsed(paused, start + 900000)).toBe(600);
+    await saveSession(
+      {
+        ...sample().sessions[0],
+        id: paused.id,
+        started_at: paused.startedAt,
+        ended_at: new Date(start + 600000).toISOString(),
+        duration_seconds: 600,
+      },
+      splitSegments(paused.id, paused.segments),
+    );
+    expect((await readData()).slices.reduce((n, s) => n + s.seconds, 0)).toBe(
+      600,
+    );
+  });
+
+  it.each(["stopwatch", "countdown"] as const)(
+    "keeps normal multiple pauses and midnight accounting for %s",
+    (mode) => {
+      const first = {
+        ...timer(),
+        mode,
+        segments: activeSegments(timer(), start + 600000),
+        runningSince: null,
+      };
+      const second = resumeTimer(first, start + 900000);
+      const paused = {
+        ...second,
+        segments: activeSegments(second, start + 1500000),
+        runningSince: null,
+      };
+      const third = resumeTimer(paused, start + 1800000);
+      const segments = activeSegments(third, start + 2400000);
+      assertTimerOrder({ ...third, segments, runningSince: null });
+      const seconds = mode === "countdown" ? 1500 : 1800;
+      expect(elapsed(third, start + 2400000)).toBe(seconds);
+      expect(
+        splitSegments("timer", segments).reduce((n, s) => n + s.seconds, 0),
+      ).toBe(seconds);
+      expect(segments[1].start).toBe(start + 900000);
+    },
+  );
+
+  it("preserves a previously overlapping timer as a raw recovery copy rather than silently rewriting it", async () => {
+    await initialize(database, null);
+    await saveSubject(subject);
+    const affected = {
+      ...timer(),
+      segments: [
+        { start, end: start + 600000 },
+        { start: start + 300000, end: start + 900000 },
+      ],
+      runningSince: null,
+    };
+    await database.timers.put({ id: 1, value: affected });
+    expect(() => resumeTimer(affected, start + 900000)).toThrow(
+      "overlapping time",
+    );
+    await expect(saveRunning(affected)).rejects.toThrow("overlapping time");
+    expect((await readData()).running).toEqual(affected);
+    await saveRunning(null);
+    expect((await database.recoveryCopies.toArray())[0].snapshot).toMatchObject(
+      { discarded_timer: affected },
+    );
+  });
+});
+
 describe("backup validation", () => {
   it("rejects duplicates, broken references, invalid dates and mismatched totals", () => {
     expect(() =>

@@ -3,14 +3,17 @@ import { Modal } from "./UI";
 import { useStride } from "../state";
 import { saveSubject, deleteSubject } from "../lib/storage";
 import type { Subject } from "../models";
+import { useEditSnapshot } from "./useEditSnapshot";
 export default function SubjectEditor({
-  subject,
+  subject: initialSubject,
   onClose,
 }: {
   subject?: Subject;
   onClose: () => void;
 }) {
   const { data, act, busy } = useStride();
+  const [subject] = useState(initialSubject);
+  const edit = useEditSnapshot("subject", subject?.id, subject);
   const [name, setName] = useState(subject?.name ?? "");
   const [description, setDescription] = useState(subject?.description ?? "");
   const [color, setColor] = useState(subject?.color ?? "#8b91e8");
@@ -18,6 +21,7 @@ export default function SubjectEditor({
   const [confirm, setConfirm] = useState(false);
   const active = data.running?.subjectId === subject?.id && !!subject;
   async function submit() {
+    if (!edit.ready) return;
     const next: Subject = {
       id: subject?.id ?? crypto.randomUUID(),
       name: name.trim(),
@@ -27,10 +31,15 @@ export default function SubjectEditor({
       created_at: subject?.created_at ?? new Date().toISOString(),
       archived: subject?.archived ?? 0,
     };
-    if (await act(() => saveSubject(next))) onClose();
+    if (await act(() => saveSubject(next, edit.snapshot))) onClose();
   }
   return (
     <Modal title={subject ? "Edit subject" : "A new subject"} onClose={onClose}>
+      {edit.error && (
+        <p role="alert" className="error">
+          {edit.error}
+        </p>
+      )}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -82,7 +91,7 @@ export default function SubjectEditor({
           <button type="button" className="secondary" onClick={onClose}>
             Cancel
           </button>
-          <button disabled={busy || !name.trim()} type="submit">
+          <button disabled={busy || !edit.ready || !name.trim()} type="submit">
             {subject ? "Save changes" : "Create subject"}
           </button>
         </div>
@@ -90,15 +99,18 @@ export default function SubjectEditor({
       {subject && (
         <div className="danger-zone">
           <button
-            disabled={busy || active}
+            disabled={busy || !edit.ready || (active && !subject.archived)}
             className="secondary"
             onClick={async () => {
               if (
                 await act(() =>
-                  saveSubject({
-                    ...subject,
-                    archived: subject.archived ? 0 : 1,
-                  }),
+                  saveSubject(
+                    {
+                      ...subject,
+                      archived: subject.archived ? 0 : 1,
+                    },
+                    edit.snapshot,
+                  ),
                 )
               )
                 onClose();
@@ -107,7 +119,7 @@ export default function SubjectEditor({
             {subject.archived ? "Restore subject" : "Archive subject"}
           </button>
           <button
-            disabled={busy || active}
+            disabled={busy || !edit.ready || active}
             className="danger subtle"
             onClick={() => setConfirm(true)}
           >
@@ -130,7 +142,8 @@ export default function SubjectEditor({
                 disabled={busy}
                 className="danger"
                 onClick={async () => {
-                  if (await act(() => deleteSubject(subject.id))) onClose();
+                  if (await act(() => deleteSubject(subject.id, edit.snapshot)))
+                    onClose();
                 }}
               >
                 Delete subject and sessions

@@ -759,7 +759,15 @@ export async function resolveConflict(
           updated_at: new Date().toISOString(),
         });
     }
-    if (conflict.entity === "subject" && !imported && choice !== "local") {
+    // A live parent edit does not resolve independent child edits. Only a
+    // parent deletion/reversal owns the cascade; explicit child conflicts are
+    // resolved separately below.
+    if (
+      conflict.entity === "subject" &&
+      !imported &&
+      choice !== "local" &&
+      (local.action === "delete" || remote.action === "delete")
+    ) {
       for (const operation of pending) {
         if (
           operation.entity === "session" &&

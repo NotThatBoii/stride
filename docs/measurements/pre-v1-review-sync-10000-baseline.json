@@ -1,0 +1,49 @@
+{
+  "measuredAt": "2026-10-09T11:39:09.461Z",
+  "sessions": 10000,
+  "browser": "154.0.4258.62",
+  "mode": "Production minified Edge SDK/worker/Dexie against unchanged SQL in PGlite through intercepted RPC transport; mock Auth; one SQL connection; no hosted/PostgREST/native latency claim.",
+  "initialPull": {
+    "wallMsFromSignInClick": 36158,
+    "applyCalls": 0,
+    "changePageCalls": 102,
+    "changes": 10021,
+    "requestJsonBytes": 3254,
+    "responseJsonBytes": 6129213,
+    "unfinishedResponses": 0,
+    "indexedDbReadQueries": {
+      "store.get": 40388,
+      "index.getAll": 30227,
+      "store.getAll": 110,
+      "store.openCursor": 10032,
+      "index.getAllKeys": 10000,
+      "store.count": 1
+    }
+  },
+  "incrementalPush100": {
+    "wallMsFromBatchWriteIncludingForegroundDebounce": 2960,
+    "applyCalls": 100,
+    "changePageCalls": 2,
+    "changes": 100,
+    "requestJsonBytes": 63146,
+    "responseJsonBytes": 75675,
+    "unfinishedResponses": 0,
+    "indexedDbReadQueries": {
+      "store.get": 1112,
+      "index.getAll": 300,
+      "store.getAll": 301,
+      "store.openCursor": 806,
+      "index.getAllKeys": 0,
+      "store.count": 1
+    }
+  },
+  "authHttpRequests": 1,
+  "backupRoundTrip": {
+    "exportedSessions": 10100,
+    "exportedAllocations": 12120,
+    "exportedUtf8Bytes": 5487199,
+    "exportWallMs": 688,
+    "sameBackupImportIncludingRequiredBackupWallMs": 9669,
+    "duplicateApplyOperations": 0
+  }
+}
